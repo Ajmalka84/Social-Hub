@@ -4,8 +4,11 @@ import "./Topbar.css";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import AxiosWithAuth from "../../Axios/Axios";
+import jwtDecode from "jwt-decode";
 function Topbar() {
-  const { user } = useContext(AuthContext);
+  const { Auth } = useContext(AuthContext);
+  const decodedAuth = jwtDecode(Auth.accessToken)
+  console.log(decodedAuth)
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const axiosJWT = AxiosWithAuth();
@@ -77,11 +80,11 @@ function Topbar() {
             <span className="topbarIconBadge">1</span>
           </div>
         </div>
-        <Link to={`/profile/${user?._doc?._id}`}>
-          {user?._doc?.profilePicture ? (
+        <Link to={`/profile/${decodedAuth?._id}`}>
+          {decodedAuth?.profilePicture ? (
             <img
               className="topbarImg"
-              src={user._doc.profilePicture}
+              src={decodedAuth.profilePicture}
               alt="person"
             />
           ) : (

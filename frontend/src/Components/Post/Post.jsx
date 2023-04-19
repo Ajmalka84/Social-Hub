@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import "./Post.css";
 import { MoreVert } from "@mui/icons-material";
@@ -7,23 +7,27 @@ import { format } from "timeago.js";
 import Options from "../Options/Options";
 import Comments from "../Comments/Comments";
 import AxiosWithAuth from "../../Axios/Axios";
+import jwtDecode from "jwt-decode";
 // import { Users } from "../../dummy";
 
 function Post({ post, setPosts }) {
   const axiosJWT = AxiosWithAuth();
-  const { user } = useContext(AuthContext);
+  const { Auth } = useContext(AuthContext);
+  const decodedAuth = jwtDecode(Auth.accessToken)
   const [like, setLike] = useState(post.likes.length);
+  const [click , setClick] = useState(1)
   const likeHandler = async (e) => {
     e.preventDefault();
     await axiosJWT
-      .put(`http://localhost:8000/post/${post._id}/like`, {
-        userId: user._doc._id,
+      .put(`post/${post._id}/like`, {
+        userId: decodedAuth._id,
       })
       .then((result) => {
+        console.log(result)
         if (!result.data.status) {
-          setLike(like - 1);
+          setLike(prev => prev - 1);
         } else {
-          setLike(like + 1);
+          setLike(prev => prev + 1);
         }
       })
       .catch((error) => {
@@ -36,7 +40,13 @@ function Post({ post, setPosts }) {
     setOpt(true);
   };
   const comments = () => {
-    setComment(true);
+    if(click === 1){
+      setComment(true);
+      setClick(prev => prev+1)
+    }else{
+      setComment(false);
+      setClick(prev => prev-1)
+    }
   };
   return (
     <div className="post">
@@ -44,9 +54,10 @@ function Post({ post, setPosts }) {
         <div className="postTop">
           <div className="postTopLeft">
             {/* <img src={Users.filter((u)=>u.id === post.userId)[0].profilePicture} alt="shareImg" className="postProfileImg"/> */}
-            <img src="" alt="shareImg" className="postProfileImg" />
+            {post?.userDetails?.profilePicture ? <img src={post?.userDetails?.url2 } alt="shareImg" className="postProfileImg" /> : <img src="/assets/NoPhoto.jpg" alt="shareImg" className="postProfileImg" />}
+            
             <span className="postUsername">
-              {post?.userId ? post.userId : "Ajmal K A"}
+              {post?.userDetails?.username ? post.userDetails.username : "some error"}
             </span>
             <span className="postDate">{format(post.createdAt)}</span>
           </div>
@@ -87,7 +98,7 @@ function Post({ post, setPosts }) {
           </div>
           <div className="postBottomRight">
             <span className="postCommentText" onClick={comments}>
-              {post?.comment} comments
+              {post.comments.length > 0 ? post.comments.length : "No"} Comment
             </span>
           </div>
         </div>

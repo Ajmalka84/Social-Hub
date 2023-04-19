@@ -23,11 +23,17 @@ module.exports = {
 
   createAccessToken: (payload) => {
     return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET_KEY, {
-      expiresIn: "60m",
+      expiresIn: "2h",
     });
   },
 
   createRefreshToken: (payload) => {
     return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET_KEY);
   },
+
+  modifyPayload : (payload) =>{
+    const {iat , ...rest} = payload;
+    payload = rest;
+    return payload;
+  }
 };

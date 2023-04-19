@@ -2,19 +2,21 @@ import React, { useContext, useEffect, useState } from "react";
 import "./EditProfile.css";
 import { AuthContext } from "../../context/AuthContext";
 import AxiosWithAuth from "../../Axios/Axios";
+import jwtDecode from "jwt-decode";
 
 function EditProfile() {
-  const { user, dispatch } = useContext(AuthContext);
-  const [username, setUsername] = useState(user._doc.username);
-  const [email, setEmail] = useState(user._doc.email);
-  const [password, setPassword] = useState(user._doc.password);
-  const [confirmPassword, setConfirmPassword] = useState(user._doc.password);
-  const [bio, setBio] = useState(user?._doc?.desc);
+  const { Auth } = useContext(AuthContext);
+  const decodedAuth = jwtDecode(Auth.accessToken)
+  const [username, setUsername] = useState(decodedAuth.username);
+  const [email, setEmail] = useState(decodedAuth.email);
+  const [password, setPassword] = useState(decodedAuth.password);
+  const [confirmPassword, setConfirmPassword] = useState(decodedAuth.password);
+  const [bio, setBio] = useState(decodedAuth?.desc);
   const [profilePic, setProfilePic] = useState(
-    user?._doc?.profilePicture ? user?._doc?.profilePicture : ""
+    decodedAuth.profilePicture ? decodedAuth?.profilePicture : ""
   );
   const [coverPic, setCoverPic] = useState(
-    user?._doc?.profilePicture ? user._doc.profilePicture : ""
+    decodedAuth?.profilePicture ? decodedAuth.coverPicture : ""
   );
   const axiosJWT = AxiosWithAuth();
   const handleSubmit = async (event) => {
@@ -31,7 +33,7 @@ function EditProfile() {
   
   const changeProfilePic = async()=>{
      const formData = new FormData;
-     formData.append('userId' , user._doc._id)
+     formData.append('userId' , decodedAuth._id)
      formData.append('profilePicture' , profilePic)
      await axiosJWT.post("users/profile-picture", formData , { "Content-Type": "multipart/form-data"}).then((result)=>{
       console.log(result)
@@ -42,7 +44,7 @@ function EditProfile() {
   
   const changeCoverPic = async()=>{
      const formData = new FormData;
-     formData.append('userId' , user._doc._id)
+     formData.append('userId' , decodedAuth._id)
      formData.append('coverPicture' , coverPic)
      await axiosJWT.post("users/profile-picture", formData , { "Content-Type": "multipart/form-data"}).then((result)=>{
       console.log(result)
@@ -68,7 +70,7 @@ function EditProfile() {
             type="text"
             id="username"
             name="username"
-            value={user._doc.username}
+            value={decodedAuth.username}
             onChange={(event) => setUsername(event.target.value)}
             required
           />
@@ -78,7 +80,7 @@ function EditProfile() {
             type="email"
             id="email"
             name="email"
-            value={user._doc.email}
+            value={decodedAuth.email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
@@ -88,7 +90,7 @@ function EditProfile() {
             type="password"
             id="password"
             name="password"
-            value={user._doc.password}
+            value={decodedAuth.password}
             onChange={(event) => setPassword(event.target.value)}
             required
           />
@@ -98,7 +100,7 @@ function EditProfile() {
             type="password"
             id="confirm_password"
             name="confirm_password"
-            value={user._doc.password}
+            value={decodedAuth.password}
             onChange={(event) => setConfirmPassword(event.target.value)}
             required
           />
@@ -107,7 +109,7 @@ function EditProfile() {
           <textarea
             id="bio"
             name="bio"
-            value={user._doc.desc}
+            value={decodedAuth.desc}
             onChange={(event) => setBio(event.target.value)}
           ></textarea>
 

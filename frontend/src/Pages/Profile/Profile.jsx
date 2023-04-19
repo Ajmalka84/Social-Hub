@@ -8,13 +8,16 @@ import Topbar from '../../Components/Topbar/Topbar'
 import { AuthContext } from '../../context/AuthContext'
 import { Link, useParams } from 'react-router-dom'
 import AxiosWithAuth from '../../Axios/Axios'
+import jwtDecode from 'jwt-decode'
 
 
 function Profile() {
-  const {user} = useContext(AuthContext)
+  const {Auth} = useContext(AuthContext)
   const userId = useParams()
   const axiosJWT = AxiosWithAuth()
-  const [otherUser , setOtherUser] = useState(user._doc);
+  const decodedAuth = jwtDecode(Auth.accessToken)
+  console.log(decodedAuth)
+  const [otherUser , setOtherUser] = useState(decodedAuth);
   useEffect(() => {
 
     const fetchUser = async () => {
@@ -41,13 +44,13 @@ function Profile() {
                 <div className="profileInfo">
                     <h2 className='profileInfoName'>{otherUser.username}</h2>
                     <span className='profileInfoDesc'>Hello Friends..</span>
-                    {userId._id === user._doc._id && <Link to={'/profile/edit'} >  <button className="editProfile" style={{marginTop : '10px'}} >Edit Profile</button></Link> }
+                    {userId._id === decodedAuth._id && <Link to={'/profile/edit'} >  <button className="editProfile" style={{marginTop : '10px'}} >Edit Profile</button></Link> }
                 </div>
                 
             </div>
             <div className="profileRightBottom">
                 <Feeds feedProfile otherUser={otherUser}/>
-                <Rightbar profile RightbarUser={otherUser} />
+                <Rightbar profile RightbarUser={otherUser}/>
             </div>
         </div>
       </div>

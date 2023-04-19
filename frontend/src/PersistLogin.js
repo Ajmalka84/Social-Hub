@@ -2,25 +2,25 @@ import React, { useContext, useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import HashLoader from "react-spinners/HashLoader";
 import { AuthContext } from "./context/AuthContext";
-
+import jwt_decode from "jwt-decode";
+import useRefreshToken from "./useRefreshToken";
 function PersistLogin() {
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useContext(AuthContext);
-  console.log(user);
+  const { Auth , persist } = useContext(AuthContext);
   let [color, setColor] = useState("#000000");
-
+  const refresh = useRefreshToken()
+  console.log(Auth.accessToken)
   useEffect(() => {
     const verifyRefreshToken = async () => {
       try {
-        
+        await refresh()
       } catch (err) {
         console.log(err);
       } finally {
         setIsLoading(false);
       }
     };
-
-    !user ? verifyRefreshToken() : setIsLoading(false);
+    !Auth.accessToken ? verifyRefreshToken() : setIsLoading(false);
   }, []);
 
   return (

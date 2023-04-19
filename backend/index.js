@@ -5,7 +5,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 const helmet = require("helmet");
-
+const cookieParser = require('cookie-parser');
 const userRoute = require("./routes/users");
 const authRoute = require("./routes/auth");
 const postRoute = require("./routes/post");
@@ -33,6 +33,7 @@ app.use(
 //middleware
 app.use(express.json()); //use() accepts 2 arguments. 1st one is the string which is mostly the url. 2nd one is the middleware function which has to work when recieving the request from the specified route. if we havent mentioned the route or 1st argument the 2nd argument works in every request. json() converts every json data that are coming as request into objects which is readable by the server.
 app.use(helmet());
+app.use(cookieParser());
 app.use(morgan("common"));
 app.use("/users", userRoute);
 app.use("/auth", authRoute);
@@ -42,3 +43,4 @@ app.use("/messages", messagesRoute);
 app.listen("8000", () => console.log("server started running on port"));
 
 // service sid for social hub : VAbe3d07efe254eebf5ccdf6c7a4b6abce
+ 

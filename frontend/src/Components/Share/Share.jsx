@@ -6,12 +6,13 @@ import LabelIcon from "@mui/icons-material/Label";
 import RoomIcon from "@mui/icons-material/Room";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import AxiosWithAuth from "../../Axios/Axios";
+import jwtDecode from "jwt-decode";
 
 function Share({ setPosts}) {
-  const { user } = useContext(AuthContext);
+  const { Auth } = useContext(AuthContext);
   const [desc, setDesc] = useState("");
   const [img, setImg] = useState(null);
-
+  const decodedAuth = jwtDecode(Auth.accessToken)
   const axiosJWT = AxiosWithAuth();
   const handleFile = (e) => {
     const imgFile = e.target.files[0];
@@ -22,7 +23,7 @@ function Share({ setPosts}) {
     const formData = new FormData();
     formData.append("img", img);
     formData.append("desc", desc);
-    formData.append("userId", user._doc._id);
+    formData.append("userId", decodedAuth._id);
     console.log(formData);
     await axiosJWT
       .post("post/create", formData, {
@@ -37,9 +38,9 @@ function Share({ setPosts}) {
           .catch((error) => {
             console.log(error);
           });
-        console.log(result);
-      })
-      .catch((error) => {
+          console.log(result);
+        })
+        .catch((error) => {
         console.log(error);
       });
   };

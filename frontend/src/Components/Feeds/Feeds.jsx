@@ -4,16 +4,17 @@ import Post from "../Post/Post";
 import Share from "../Share/Share";
 import "./Feeds.css";
 import AxiosWithAuth from "../../Axios/Axios";
+import jwtDecode from "jwt-decode";
 function Feeds({ feedProfile , otherUser}) {
-  const { user } = useContext(AuthContext);
+  const { Auth } = useContext(AuthContext);
   const AxiosJWT = AxiosWithAuth();
-  
+  const decodedAuth = jwtDecode(Auth.accessToken)
   const [posts, setPosts] = useState([]);
   const [userPosts ,setUserPosts] = useState([])
   useEffect(() => {
     if(feedProfile){
       const allUserPosts = async () => {
-        await AxiosJWT.get(`post/timeline/${otherUser._id}`)
+        await AxiosJWT.get(`post/timeline/${otherUser?._id}`)
         .then((alluserposts) => {
           setUserPosts([...alluserposts.data]);
         })
@@ -30,7 +31,7 @@ function Feeds({ feedProfile , otherUser}) {
           })
           .catch((error) => {
             console.log(error);
-          });
+          }); 
       };
       allPosts();
     }
@@ -41,7 +42,7 @@ function Feeds({ feedProfile , otherUser}) {
     return (
       <div className="feeds">
         <div className="feedWrapper">
-          {otherUser._id === user?._doc?._id && <Share setPosts={setPosts}/> }
+          {otherUser?._id === decodedAuth?._id && <Share setPosts={setPosts}/> }
           {userPosts.map((p) => {
             return <Post key={p._id} post={p} setPosts={setPosts} />;
           })}

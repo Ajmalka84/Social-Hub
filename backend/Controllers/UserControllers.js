@@ -2,6 +2,7 @@ const {
   createAccessToken,
   createRefreshToken,
   verify,
+  modifyPayload,
 } = require("../middlewares/middleware");
 const User = require("../model/User");
 const post = require("../model/Post");
@@ -60,10 +61,10 @@ module.exports = {
 
             // saves the newUser into the database and converts user objects into json
             const user = await newUser.save();
-            const payload = { userId: req.body.email };
-            const accessToken = createAccessToken(payload);
-            const refreshToken = createRefreshToken(payload);
-            refreshTokens.push(refreshToken);
+            // const payload = { userId: req.body.email };
+            // const accessToken = createAccessToken(payload);
+            // const refreshToken = createRefreshToken(payload);
+            // refreshTokens.push(refreshToken);
             res.status(200).json(user);
           } catch (error) {
             res.json(error);
@@ -89,16 +90,20 @@ module.exports = {
       if (!validatePassword) {
         return res.status(400).json("wrong password");
       }
-      const payload = { userId: req.body.email };
+      console.log(user._doc)
+      const payload = user._doc;
       const accessToken = createAccessToken(payload);
+      console.log(accessToken , "access Token on login")
       const refreshToken = createRefreshToken(payload);
       refreshTokens.push(refreshToken);
       res.cookie("refreshToken", refreshToken, {
         // httpOnly: true,
         withCredentials: true,
-        maxAge: 2 * 24 * 60 * 60,
+        expires: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
       });
-      res.json({ ...user, accessToken: accessToken });
+      const userDetails = {accessToken: accessToken}
+      
+      res.json(userDetails);
     } catch (error) {
       res.json(error);
     }
@@ -162,7 +167,9 @@ module.exports = {
 
   refresh: (req, res) => {
     //take the refresh token from the user
-    const refreshToken = req.body.refreshToken;
+    // const refreshToken = req.body.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
+    console.log(refreshToken)
     // send error if there is no token or its invalid
     if (!refreshToken) return res.status(401).json("You are not authenticated");
     if (!refreshTokens.includes(refreshToken)) {
@@ -176,10 +183,9 @@ module.exports = {
           console.log(error, "error is here");
           return res.status(403).json("refreshToken is not valid");
         }
-        console.log(refreshTokens);
         // refreshTokens = refreshTokens.filter((token) => token !== refreshToken);
-        console.log(payload);
-        const newAccessToken = createAccessToken(payload);
+        const newPayload = modifyPayload(payload);
+        const newAccessToken = createAccessToken(newPayload);
         console.log(newAccessToken, "newAT");
         res.status(200).json({ accessToken: newAccessToken });
       }
@@ -227,16 +233,43 @@ module.exports = {
     try {
       const posts = await post.find({}).sort({ createdAt: -1 });
       for (const post of posts) {
+        post._doc.userDetails = await User.findOne({_id : post._doc.userId})
+        const comments = post._doc.comments; 
+        if(comments.length >= 0){
+           for(const comment of comments){
+             comment.userDetails = await User.findOne({_id : comment.userId})
+             const downloadParams3 = {
+               Bucket: s3_bucket_name,
+               Key: comment?.userDetails?.profilePicture,
+              };
+              if(comment.userDetails.profilePicture != undefined){
+                const command3 = new GetObjectCommand(downloadParams3);
+                const url3 = await getSignedUrl(s3, command3, { expiresIn: 600000 });
+                comment.userDetails._doc.url3 = url3; 
+              }
+           }
+        }
         const downloadParams = {
           Bucket: s3_bucket_name,
-          Key: post?.img,
+          Key: post?._doc.img,
         };
-        if (post.img == undefined) {
+        const downloadParams2 = {
+          Bucket: s3_bucket_name,
+          Key: post?._doc.userDetails?.profilePicture,
+        };
+        if (post._doc.userDetails.profilePicture == undefined && post.img == undefined) {
           continue;
         }
-        const command = new GetObjectCommand(downloadParams);
-        const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
-        post._doc.url = url;
+        if (post.img != undefined){
+          const command = new GetObjectCommand(downloadParams);
+          const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
+          post._doc.url = url;
+        }
+        if(post._doc.userDetails.profilePicture != undefined){
+          const command2 = new GetObjectCommand(downloadParams2);
+          const url2 = await getSignedUrl(s3, command2, { expiresIn: 600000 });
+          post._doc.userDetails._doc.url2 = url2; 
+        }
       }
 
       res.status(200).json(posts);

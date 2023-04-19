@@ -5,44 +5,51 @@ import { Users } from "../../dummy";
 import Online from "../Online/Online";
 import AxiosWithAuth from "../../Axios/Axios";
 import { Link } from "react-router-dom";
-import {Add, Remove} from '@mui/icons-material'
+import { Add, Remove } from "@mui/icons-material";
+import jwtDecode from "jwt-decode";
 function Rightbar({ profile, RightbarUser }) {
-  const { user } = useContext(AuthContext);
+  const { Auth } = useContext(AuthContext);
+  const decodedAuth = jwtDecode(Auth.accessToken)
   const [friends, setFriends] = useState([]);
-  const [followed , setFollowed] = useState(false);
+  const [followed, setFollowed] = useState(false);
   const axiosJWT = AxiosWithAuth();
-  
+
   useEffect(() => {
     const getFriends = async () => {
       try {
-        const friendList = await axiosJWT.get(
-          `users/friends/${RightbarUser._id}`
-        );
-        setFriends((prevFriends) => friendList.data);
+        if (RightbarUser) {
+          const friendList = await axiosJWT.get(
+            `users/friends/${RightbarUser._id}`
+          );
+          setFriends((prevFriends) => friendList.data);
+        }
       } catch (error) {
         console.log(error);
       }
     };
     getFriends();
   }, [RightbarUser]);
-  
-  useEffect(()=>{
-    setFollowed(user?._doc?.followings.includes(RightbarUser?._id))
-  }, [user, RightbarUser])
-  
-  const handleClick = async()=>{
-    try {
-     if (followed) {
-       await axiosJWT.put(`users/${RightbarUser._id}/unfollow` , {userId : user._doc._id})
-      } else{
-       await axiosJWT.put(`users/${RightbarUser._id}/follow` ,{userId : user._doc._id})
-     }
-    } catch (error) {
-      console.log(error)
-    }
-    setFollowed(!followed)
 
-  }
+  useEffect(() => {
+    setFollowed(decodedAuth?.followings.includes(RightbarUser?._id));
+  }, [decodedAuth, RightbarUser]);
+
+  const handleClick = async () => {
+    try {
+      if (followed) {
+        await axiosJWT.put(`users/${RightbarUser._id}/unfollow`, {
+          userId: decodedAuth._id,
+        });
+      } else {
+        await axiosJWT.put(`users/${RightbarUser._id}/follow`, {
+          userId: decodedAuth._id,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    setFollowed(!followed);
+  };
   const HomeRightbar = () => {
     return (
       <>
@@ -66,9 +73,10 @@ function Rightbar({ profile, RightbarUser }) {
   const ProfileRightbar = () => {
     return (
       <>
-        {RightbarUser?._id !== user._doc._id && (
-          <button className="rightbarFollowButton" onClick={handleClick}>{followed ? "Unfollow" : "Follow"}
-          {followed ? <Remove /> : <Add /> }
+        {RightbarUser?._id !== decodedAuth._id && (
+          <button className="rightbarFollowButton" onClick={handleClick}>
+            {followed ? "Unfollow" : "Follow"}
+            {followed ? <Remove /> : <Add />}
           </button>
         )}
         <h4 className="rightbarTitle">User Information</h4>
@@ -90,7 +98,7 @@ function Rightbar({ profile, RightbarUser }) {
         <div className="rightbarFollowings">
           {friends.length != 0
             ? friends.map((friend) => (
-                <Link to={`/profile/${friend._id}`}>
+                <Link to={`/profile/${friend?._id}`}>
                   <div className="rightbarFollowing" key={friend._id}>
                     <img
                       src="assets/person/1.jpg" // change

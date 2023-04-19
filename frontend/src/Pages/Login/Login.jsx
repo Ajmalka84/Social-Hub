@@ -1,6 +1,6 @@
 import axios from "axios";
-import React, { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useContext, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./Login.css";
 import jwt_decode from "jwt-decode";
 import { LoginCall } from "../../ApiCalls";
@@ -18,8 +18,11 @@ const schema = yup.object({
 
 function Login() {
   const [verify, setVerify] = useState(false);
-  const { user, isFetching, error, dispatch } = useContext(AuthContext);
+  // const { user, isFetching, error, dispatch } = useContext(AuthContext);
+  const { Auth, setAuth, persist } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
   const {
     handleSubmit,
     register,
@@ -29,12 +32,22 @@ function Login() {
   });
 
   const formSubmit = async (data) => {
-     LoginCall({ ...data }, dispatch).then((result) => {
-        navigate('/')    
-    })
-    .catch((error)=>{
-      console.log(error);
-    })
+    await axios
+      .post(
+        "http://localhost:8000/auth/login",
+        { ...data },
+        {
+          withCredentials: true,
+        }
+      )
+      .then((result) => {
+        // dispatch({ type: "LOGIN_SUCCESS", payload: result.data });
+        setAuth((prevAuth) => ({ ...prevAuth, ...result.data }));
+        navigate(from, { replace: true });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
 
     // if (user !== null) {
     //   // it is coming false when we first click on the submit button because user is taking time to get updated when it recieves value from the dispatch funtion from loginCall()
@@ -51,6 +64,11 @@ function Login() {
   const loginForgot = () => {
     setVerify(true);
   };
+
+  useEffect(() => {
+    localStorage.setItem("persist", persist);
+  }, [persist]);
+
   return (
     <div className="login">
       <div className="loginWrapper">
@@ -80,11 +98,7 @@ function Login() {
                 errorMessage={errors.password?.message}
               />
               <button className="loginButton" type="submit">
-                {isFetching ? (
-                  <CircularProgress color="inherit" size="15px" />
-                ) : (
-                  "Log In"
-                )}
+                Log In
               </button>
               <span className="loginForgot" onClick={loginForgot}>
                 Forgot Password ?

@@ -32,6 +32,7 @@ router.post("/login", login);
 router.post("/reset_password", resetPassword);
 
 // refresh
-router.post("/refresh", refresh);
+// router.post("/refresh", refresh);
+router.get("/refresh", refresh );
 
 module.exports = router; // 29-03-2023 : when i give this router in an object, it shows a type error saying that the router is recieved in the app.use as an object
