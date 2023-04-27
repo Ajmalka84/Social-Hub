@@ -8,7 +8,7 @@ import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import AxiosWithAuth from "../../Axios/Axios";
 import jwtDecode from "jwt-decode";
 
-function Share({ setPosts}) {
+function Share({profilePicture, setPosts}) {
   const { Auth } = useContext(AuthContext);
   const [desc, setDesc] = useState("");
   const [img, setImg] = useState(null);
@@ -24,7 +24,6 @@ function Share({ setPosts}) {
     formData.append("img", img);
     formData.append("desc", desc);
     formData.append("userId", decodedAuth._id);
-    console.log(formData);
     await axiosJWT
       .post("post/create", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -32,7 +31,6 @@ function Share({ setPosts}) {
       .then(async (result) => {
         await axiosJWT.get("post/all-posts")
           .then((allposts) => {
-            console.log(allposts.data);
             setPosts([...allposts.data]);
           })
           .catch((error) => {
@@ -49,11 +47,15 @@ function Share({ setPosts}) {
     <div className="share">
       <form onSubmit={submitPost} className="shareWrapper">
         <div className="shareTop">
-          <img
-            src="/assets/NoPhoto.jpg"
+          {decodedAuth?.profilePicture ? <img
+            src={profilePicture}
             alt="profileimg"
             className="shareProfileImg"
-          />
+          /> : <img
+          src="/assets/NoPhoto.jpg"
+          alt="profileimg"
+          className="shareProfileImg"
+        />}
           <input
             placeholder="What is in your mind ?"
             className="shareInput"

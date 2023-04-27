@@ -8,11 +8,23 @@ const {
   commentPost,
   getaPost,
   timeline,
+  reportPost,
 } = require("../Controllers/UserControllers");
 const { verify } = require("../middlewares/middleware");
 const multer = require("multer");
 const storage = multer.memoryStorage();  //validations to do 
-const upload = multer({ storage: storage });
+const fileFilter = (req, file, cb) => {
+  // Allow only image and video files
+  if (
+    file.mimetype === "image/jpeg" ||
+    file.mimetype === "image/png" 
+  ) {
+    cb(null, true);
+  } else {
+    cb(new Error("Invalid file type"), false);
+  }
+};
+const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 //create a post
 router.post("/create", verify, upload.single("img"), createPost);
@@ -22,6 +34,9 @@ router.get("/all-posts", verify, allPosts);
 
 //update a post
 router.put("/:id/update", verify, updatePost);
+
+//report a post
+router.put("/:id/report", verify, reportPost);
 
 //delete a post
 router.delete("/:id/delete", verify, deletePost);

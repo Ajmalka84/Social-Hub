@@ -2,10 +2,7 @@ import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Login.css";
-import jwt_decode from "jwt-decode";
-import { LoginCall } from "../../ApiCalls";
 import { AuthContext } from "../../context/AuthContext";
-import CircularProgress from "@mui/material/CircularProgress";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -43,7 +40,7 @@ function Login() {
       .then((result) => {
         // dispatch({ type: "LOGIN_SUCCESS", payload: result.data });
         setAuth((prevAuth) => ({ ...prevAuth, ...result.data }));
-        navigate(from, { replace: true });
+        navigate(from, { replace : true });
       })
       .catch((error) => {
         console.log(error);

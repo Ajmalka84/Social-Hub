@@ -9,9 +9,17 @@ import { Add, Remove } from "@mui/icons-material";
 import jwtDecode from "jwt-decode";
 function Rightbar({ profile, RightbarUser }) {
   const { Auth } = useContext(AuthContext);
-  const decodedAuth = jwtDecode(Auth.accessToken)
+  const decodedAuth = jwtDecode(Auth.accessToken);
   const [friends, setFriends] = useState([]);
-  const [followed, setFollowed] = useState(false);
+  const [followed, setFollowed] = useState(async () => {
+    const mainUser = await axiosJWT.get(
+      `users/get-main-user/${decodedAuth._id}`
+    );
+    const rightbarUserId = RightbarUser._id.toString();
+    return mainUser?.data?.followings.some(
+      (following) => following.userId === rightbarUserId
+    );
+  });
   const axiosJWT = AxiosWithAuth();
 
   useEffect(() => {
@@ -29,9 +37,21 @@ function Rightbar({ profile, RightbarUser }) {
     };
     getFriends();
   }, [RightbarUser]);
-
   useEffect(() => {
-    setFollowed(decodedAuth?.followings.includes(RightbarUser?._id));
+    const comparison = async () => {
+      const mainUser = await axiosJWT.get(
+        `users/get-main-user/${decodedAuth._id}`
+      );
+
+      const rightbarUserId = RightbarUser._id.toString(); // convert ObjectId to string
+      setFollowed(
+        mainUser?.data?.followings.some(
+          (following) => following.userId === rightbarUserId
+        )
+      );
+    };
+    // mainUser?.data?.followings.includes({ userId: RightbarUser?._id })
+    comparison();
   }, [decodedAuth, RightbarUser]);
 
   const handleClick = async () => {
@@ -98,13 +118,24 @@ function Rightbar({ profile, RightbarUser }) {
         <div className="rightbarFollowings">
           {friends.length != 0
             ? friends.map((friend) => (
-                <Link to={`/profile/${friend?._id}`}>
+                <Link
+                  to={`/profile/${friend?._id}`}
+                  style={{ textDecoration: "none" }}
+                >
                   <div className="rightbarFollowing" key={friend._id}>
-                    <img
-                      src="assets/person/1.jpg" // change
-                      alt=""
-                      className="rightbarFollowingImg"
-                    />
+                    {friend?.profilePicture ? (
+                      <img
+                        src={friend.url}
+                        alt=""
+                        className="rightbarFollowingImg"
+                      />
+                    ) : (
+                      <img
+                        src="/assets/NoPhoto.jpg"
+                        alt=""
+                        className="rightbarFollowingImg"
+                      />
+                    )}
                     <span className="rightbarFollowingName">
                       {friend?.username}
                     </span>

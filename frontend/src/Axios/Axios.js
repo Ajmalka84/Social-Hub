@@ -28,7 +28,6 @@ const AxiosWithAuth = () => {
             return { ...prev, ...res.data };
           });
         }
-        console.log(newAuth);
         config.headers["authorization"] = `Bearer ${newAuth}`;
         return config;
       } catch (error) {

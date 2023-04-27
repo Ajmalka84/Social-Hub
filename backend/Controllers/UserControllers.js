@@ -90,19 +90,17 @@ module.exports = {
       if (!validatePassword) {
         return res.status(400).json("wrong password");
       }
-      console.log(user._doc)
       const payload = user._doc;
       const accessToken = createAccessToken(payload);
-      console.log(accessToken , "access Token on login")
       const refreshToken = createRefreshToken(payload);
       refreshTokens.push(refreshToken);
       res.cookie("refreshToken", refreshToken, {
         // httpOnly: true,
         withCredentials: true,
-        expires: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+        expires: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
       });
-      const userDetails = {accessToken: accessToken}
-      
+      const userDetails = { accessToken: accessToken };
+
       res.json(userDetails);
     } catch (error) {
       res.json(error);
@@ -169,7 +167,6 @@ module.exports = {
     //take the refresh token from the user
     // const refreshToken = req.body.refreshToken;
     const refreshToken = req.cookies.refreshToken;
-    console.log(refreshToken)
     // send error if there is no token or its invalid
     if (!refreshToken) return res.status(401).json("You are not authenticated");
     if (!refreshTokens.includes(refreshToken)) {
@@ -186,7 +183,6 @@ module.exports = {
         // refreshTokens = refreshTokens.filter((token) => token !== refreshToken);
         const newPayload = modifyPayload(payload);
         const newAccessToken = createAccessToken(newPayload);
-        console.log(newAccessToken, "newAT");
         res.status(200).json({ accessToken: newAccessToken });
       }
     );
@@ -233,21 +229,23 @@ module.exports = {
     try {
       const posts = await post.find({}).sort({ createdAt: -1 });
       for (const post of posts) {
-        post._doc.userDetails = await User.findOne({_id : post._doc.userId})
-        const comments = post._doc.comments; 
-        if(comments.length >= 0){
-           for(const comment of comments){
-             comment.userDetails = await User.findOne({_id : comment.userId})
-             const downloadParams3 = {
-               Bucket: s3_bucket_name,
-               Key: comment?.userDetails?.profilePicture,
-              };
-              if(comment.userDetails.profilePicture != undefined){
-                const command3 = new GetObjectCommand(downloadParams3);
-                const url3 = await getSignedUrl(s3, command3, { expiresIn: 600000 });
-                comment.userDetails._doc.url3 = url3; 
-              }
-           }
+        post._doc.userDetails = await User.findOne({ _id: post._doc.userId });
+        const comments = post._doc.comments;
+        if (comments.length >= 0) {
+          for (const comment of comments) {
+            comment.userDetails = await User.findOne({ _id: comment.userId });
+            const downloadParams3 = {
+              Bucket: s3_bucket_name,
+              Key: comment?.userDetails?.profilePicture,
+            };
+            if (comment.userDetails.profilePicture != undefined) {
+              const command3 = new GetObjectCommand(downloadParams3);
+              const url3 = await getSignedUrl(s3, command3, {
+                expiresIn: 600000,
+              });
+              comment.userDetails._doc.url3 = url3;
+            }
+          }
         }
         const downloadParams = {
           Bucket: s3_bucket_name,
@@ -257,18 +255,21 @@ module.exports = {
           Bucket: s3_bucket_name,
           Key: post?._doc.userDetails?.profilePicture,
         };
-        if (post._doc.userDetails.profilePicture == undefined && post.img == undefined) {
+        if (
+          post._doc.userDetails.profilePicture == undefined &&
+          post.img == undefined
+        ) {
           continue;
         }
-        if (post.img != undefined){
+        if (post.img != undefined) {
           const command = new GetObjectCommand(downloadParams);
           const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
           post._doc.url = url;
         }
-        if(post._doc.userDetails.profilePicture != undefined){
+        if (post._doc.userDetails.profilePicture != undefined) {
           const command2 = new GetObjectCommand(downloadParams2);
           const url2 = await getSignedUrl(s3, command2, { expiresIn: 600000 });
-          post._doc.userDetails._doc.url2 = url2; 
+          post._doc.userDetails._doc.url2 = url2;
         }
       }
 
@@ -279,6 +280,7 @@ module.exports = {
   },
 
   updatePost: async (req, res) => {
+   
     const updatePost = await post.findById(req.params.id);
     if (req.body.userId === updatePost.userId) {
       const updatedPost = await updatePost.updateOne({ $set: req.body });
@@ -287,19 +289,30 @@ module.exports = {
       res.status(403).json("you can only update your post");
     }
   },
+  
+  reportPost: async (req, res) => {
+    try {
+      console.log("first")
+      const reportPost = await post.findByIdAndUpdate(req.params.id , {$push : {reports : req.params.id}});
+      console.log(reportPost)
+      res.status(200).json(reportPost)
+    } catch (error) {
+      res.status(500).json(error)
+    }
+  },
 
   deletePost: async (req, res) => {
-   try {
-     const deletePost = await post.findById(req.params.id);
-     if (req.body.userId == deletePost.userId) {
-       const deletedPost = await deletePost.deleteOne();
-       res.status(200).json("Your post deleted succesfully");
-     } else {
-       res.status(403).json("you can only delete your post");
-     }
-   } catch (error) {
-     res.status(500).json(error)
-   }
+    try {
+      const deletePost = await post.findById(req.params.id);
+      if (req.body.userId == deletePost.userId) {
+        const deletedPost = await deletePost.deleteOne();
+        res.status(200).json("Your post deleted succesfully");
+      } else {
+        res.status(403).json("you can only delete your post");
+      }
+    } catch (error) {
+      res.status(500).json(error);
+    }
   },
 
   likePost: async (req, res) => {
@@ -352,13 +365,111 @@ module.exports = {
     //the route should include something other than timeline because as /:id has already been given this timeline will go to that root. instead of avoiding that we should give something other than that.
     try {
       const currentUser = await User.findById(req.params.userId);
-      const currentUserPost = await post.find({ userId: req.params.userId });
-      const friendsPost = await Promise.all(
-        currentUser.followings.map((friendId) => {
-          return post.find({ userId: friendId });
-        })
-      );
-      res.json(currentUserPost.concat(...friendsPost));
+      const currentUserPosts = await post.find({ userId: req.params.userId });
+      for(const currentUserPost of currentUserPosts){
+        currentUserPost._doc.userDetails = await User.findOne({ _id: currentUserPost._doc.userId });
+        const comments = currentUserPost._doc.comments;
+        if (comments.length >= 0) {
+          for (const comment of comments) {
+            comment.userDetails = await User.findOne({ _id: comment.userId });
+            const downloadParams3 = {
+              Bucket: s3_bucket_name,
+              Key: comment?.userDetails?.profilePicture,
+            };
+            if (comment.userDetails.profilePicture != undefined) {
+              const command3 = new GetObjectCommand(downloadParams3);
+              const url3 = await getSignedUrl(s3, command3, {
+                expiresIn: 600000,
+              });
+              comment.userDetails._doc.url3 = url3;
+            }
+          }
+        }
+        const downloadParams = {
+          Bucket: s3_bucket_name,
+          Key: currentUserPost?._doc.img,
+        };
+        const downloadParams2 = {
+          Bucket: s3_bucket_name,
+          Key: currentUserPost?._doc.userDetails?.profilePicture,
+        };
+        if (
+          currentUserPost._doc.userDetails.profilePicture == undefined &&
+          currentUserPost.img == undefined
+        ) {
+          continue;
+        }
+        if (currentUserPost.img != undefined) {
+          const command = new GetObjectCommand(downloadParams);
+          const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
+          currentUserPost._doc.url = url;
+        }
+        if (currentUserPost._doc.userDetails.profilePicture != undefined) {
+          const command2 = new GetObjectCommand(downloadParams2);
+          const url2 = await getSignedUrl(s3, command2, { expiresIn: 600000 });
+          currentUserPost._doc.userDetails._doc.url2 = url2;
+        }
+      }
+      // const friendsPost = await Promise.all(
+      //   currentUser.followings.map((friendId) => {
+      //     return post.find({ userId: friendId });
+      //   })
+      // );
+      res.json(currentUserPosts);
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
+
+  allPosts: async (req, res) => {
+    try {
+      const posts = await post.find({}).sort({ createdAt: -1 });
+      for (const post of posts) {
+        post._doc.userDetails = await User.findOne({ _id: post._doc.userId });
+        const comments = post._doc.comments;
+        if (comments.length >= 0) {
+          for (const comment of comments) {
+            comment.userDetails = await User.findOne({ _id: comment.userId });
+            const downloadParams3 = {
+              Bucket: s3_bucket_name,
+              Key: comment?.userDetails?.profilePicture,
+            };
+            if (comment.userDetails.profilePicture != undefined) {
+              const command3 = new GetObjectCommand(downloadParams3);
+              const url3 = await getSignedUrl(s3, command3, {
+                expiresIn: 600000,
+              });
+              comment.userDetails._doc.url3 = url3;
+            }
+          }
+        }
+        const downloadParams = {
+          Bucket: s3_bucket_name,
+          Key: post?._doc.img,
+        };
+        const downloadParams2 = {
+          Bucket: s3_bucket_name,
+          Key: post?._doc.userDetails?.profilePicture,
+        };
+        if (
+          post._doc.userDetails.profilePicture == undefined &&
+          post.img == undefined
+        ) {
+          continue;
+        }
+        if (post.img != undefined) {
+          const command = new GetObjectCommand(downloadParams);
+          const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
+          post._doc.url = url;
+        }
+        if (post._doc.userDetails.profilePicture != undefined) {
+          const command2 = new GetObjectCommand(downloadParams2);
+          const url2 = await getSignedUrl(s3, command2, { expiresIn: 600000 });
+          post._doc.userDetails._doc.url2 = url2;
+        }
+      }
+
+      res.status(200).json(posts);
     } catch (error) {
       res.status(500).json(error);
     }
@@ -402,7 +513,6 @@ module.exports = {
 
   searchUser: async (req, res) => {
     try {
-      console.log(req.body.query);
       const searchResult = await User.find({
         username: new RegExp(`${req.body.query}`, "i"),
       }).limit(5);
@@ -415,26 +525,64 @@ module.exports = {
   getaUser: async (req, res) => {
     try {
       const user = await User.findById(req.params.id);
-      const { createdAt, password, ...others } = user._doc;
-      res.status(200).json(others);
+      console.log(user._doc)
+      console.log(user._doc.followings)
+      
+      if(user?._doc?.profilePicture){
+        const downloadParams = {
+          Bucket: s3_bucket_name,
+          Key: user.profilePicture,
+        }
+        const command = new GetObjectCommand(downloadParams);
+          const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
+          user._doc.url = url;
+      }   
+      if(user?._doc?.coverPicture){
+        const downloadParams1 = {
+          Bucket: s3_bucket_name,
+          Key: user.coverPicture,
+        }
+        const command1 = new GetObjectCommand(downloadParams1);
+          const url1 = await getSignedUrl(s3, command1, { expiresIn: 600000 });
+          user._doc.url1 = url1;
+      }   
+      res.status(200).json(user._doc);
     } catch (error) {
       res.status(500).json(error);
     }
+  },
+
+  getMainUser : async(req , res)=>{
+    console.log(req.params.id)
+    await User.findOne({_id : req.params.id}).then((result)=>{
+      res.status(200).json(result)
+    }).catch((error)=>{
+      res.status(500).json(error)
+    })
   },
 
   getFriends: async (req, res) => {
     try {
       const user = await User.findById(req.params.userId);
       const friends = await Promise.all(
-        user.followings.map((friendId) => {
-          return User.findById(friendId);
+        user.followings.map(async(friendId) => {
+          const friend = await User.findById(friendId.userId)
+          if(friend?._doc?.profilePicture){
+            const downloadParams = {
+            Bucket: s3_bucket_name,
+            Key: friend?.profilePicture,
+            }
+          const command = new GetObjectCommand(downloadParams);
+          const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
+          friend._doc.url = url;}
+          return friend;
         })
       );
       let friendList = [];
       friends.map((friend) => {
-        const { _id, username, profilePicture } = friend;
-        friendList.push({ _id, username, profilePicture });
+        friendList.push(friend);
       });
+      console.log(friendList)
       res.status(200).json(friendList);
     } catch (error) {
       res.status(500).json(error);
@@ -447,8 +595,8 @@ module.exports = {
         const currentuser = await User.findByIdAndUpdate(req.body.userId);
         const otheruser = await User.findByIdAndUpdate(req.params.id);
         if (!currentuser.followings.includes(req.params.id)) {
-          await currentuser.updateOne({ $push: { followings: req.params.id } });
-          await otheruser.updateOne({ $push: { followers: req.body.userId } });
+          await currentuser.updateOne({ $push: { followings: { userId : req.params.id} } });
+          await otheruser.updateOne({ $push: { followers: {userId : req.body.userId} } });
 
           res.status(200).json("its success");
         } else {
@@ -467,9 +615,12 @@ module.exports = {
       try {
         const currentuser = await User.findByIdAndUpdate(req.body.userId);
         const otheruser = await User.findByIdAndUpdate(req.params.id);
-        if (currentuser.followings.includes(req.params.id)) {
-          await currentuser.updateOne({ $pull: { followings: req.params.id } });
-          await otheruser.updateOne({ $pull: { followers: req.body.userId } });
+        
+        console.log(currentuser._doc.followings[0].userId)
+        console.log(currentuser.followings.some(following => following.userId === req.params.id))
+        if (currentuser.followings.some(following => following.userId === req.params.id)) {
+          await currentuser.updateOne({ $pull: { followings: {userId : req.params.id} } });
+          await otheruser.updateOne({ $pull: { followers: {userId : req.body.userId} } });
           res.status(200).json("its success");
         } else {
           res.status(403).json("to be followed");
@@ -496,11 +647,14 @@ module.exports = {
 
   getAConversation: async (req, res) => {
     try {
+      console.log("its here")
+      console.log(req.params)
       const conversation = await Conversation.find({
         members: {
           $in: [req.params.userId],
         },
       });
+      console.log(conversation)
       res.status(200).json(conversation);
     } catch (error) {
       res.status(500).json(error);
@@ -528,72 +682,96 @@ module.exports = {
     }
   },
 
-  profileEdit : async(req, res) => {
+  profileEdit: async (req, res) => {
     try {
-      const {username , email , password , desc} = req.body
-      await User.findOneAndUpdate(req.body.userId, {username : username , password : password , desc : desc}).then((result)=>{
-        console.log(result)
-        res.status(200).json(result.data)
-      })
+      const { username, email, password, desc } = req.body;
+      await User.findOneAndUpdate(req.body.userId, {
+        username: username,
+        password: password,
+        desc: desc,
+      }).then((result) => {
+        console.log(result);
+        res.status(200).json(result.data);
+      });
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
+
+  updateProfilePic: async (req, res) => {
+    try {
+      if (req.file) {
+        const imagename = (bytes = 32) =>
+          crypto.randomBytes(bytes).toString("hex");
+        const imageName = imagename();
+
+        const params = {
+          Bucket: s3_bucket_name,
+          Key: imageName,
+          Body: req.file.buffer,
+          ContentType: req.file.mimetype,
+        };
+        const command = new PutObjectCommand(params);
+        await s3.send(command);
+
+        await User.findByIdAndUpdate(req.body.userId, {
+          profilePicture: imageName,
+        }).then((result) => {
+          res.status(200).json(result);
+        });
+      } else {
+        res.status(200).json("not done anything");
+      }
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
+
+  updateCoverPic: async (req, res) => {
+    try {
+      if (req.file) {
+        const imagename = (bytes = 32) =>
+          crypto.randomBytes(bytes).toString("hex");
+        const imageName = imagename();
+
+        const params = {
+          Bucket: s3_bucket_name,
+          Key: imageName,
+          Body: req.file.buffer,
+          ContentType: req.file.mimetype,
+        };
+        const command = new PutObjectCommand(params);
+        await s3.send(command);
+
+        await User.findByIdAndUpdate(req.body.userId, {
+          coverPicture: imageName,
+        }).then((result) => {
+          res.status(200).json(result);
+        });
+      } else {
+        res.status(200).json("not done anything");
+      }
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
+
+  getProfilePic: async (req, res) => {
+    try {
+      const user = await User.findOne({ _id: req.body.userId });
+      console.log(user.profilePicture);
+      const downloadParams = {
+        Bucket: s3_bucket_name,
+        Key: user?.profilePicture,
+      };
+      if(user._doc.profilePicture != undefined){
+        const command = new GetObjectCommand(downloadParams);
+        const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
+        user._doc.url = url;
+      }
+      res.status(200).json(user)
     } catch (error) {
       res.status(500).json(error)
     }
   },
-
-  updateProfilePic : async (req, res)=>{
-   try {
-     if(req.file){
-       const imagename = (bytes = 32) =>
-           crypto.randomBytes(bytes).toString("hex");
-         const imageName = imagename();
- 
-         const params = {
-           Bucket: s3_bucket_name,
-           Key: imageName,
-           Body: req.file.buffer,
-           ContentType: req.file.mimetype,
-         };
-         const command = new PutObjectCommand(params);
-         await s3.send(command);
-
-         await User.findByIdAndUpdate(req.body.userId, {profilePicture : imageName}).then((result)=>{
-          console.log(result)
-          res.status(200).json(result)
-         })
-     }else{
-         res.status(200).json('not done anything')
-     }
-   } catch (error) {
-     res.status(500).json(error)
-   } 
-  },
-
-
-  updateCoverPic : async (req, res)=>{
-   try {
-     if(req.file){
-       const imagename = (bytes = 32) =>
-           crypto.randomBytes(bytes).toString("hex");
-         const imageName = imagename();
- 
-         const params = {
-           Bucket: s3_bucket_name,
-           Key: imageName,
-           Body: req.file.buffer,
-           ContentType: req.file.mimetype,
-         };
-         const command = new PutObjectCommand(params);
-         await s3.send(command);
-
-         await User.findByIdAndUpdate(req.body.userId, {coverPicture : imageName}).then((result)=>{
-          console.log(result)
-          res.status(200).json(result)
-         })
-     }else{
-         res.status(200).json('not done anything')
-     }
-   } catch (error) {
-     res.status(500).json(error)
-   } 
-  }
 };

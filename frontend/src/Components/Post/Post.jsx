@@ -10,7 +10,7 @@ import AxiosWithAuth from "../../Axios/Axios";
 import jwtDecode from "jwt-decode";
 // import { Users } from "../../dummy";
 
-function Post({ post, setPosts }) {
+function Post({ profilePicture, post, setPosts }) {
   const axiosJWT = AxiosWithAuth();
   const { Auth } = useContext(AuthContext);
   const decodedAuth = jwtDecode(Auth.accessToken)
@@ -23,7 +23,6 @@ function Post({ post, setPosts }) {
         userId: decodedAuth._id,
       })
       .then((result) => {
-        console.log(result)
         if (!result.data.status) {
           setLike(prev => prev - 1);
         } else {
@@ -37,7 +36,13 @@ function Post({ post, setPosts }) {
   const [opt, setOpt] = useState(false);
   const [comment, setComment] = useState(false);
   const Option = () => {
-    setOpt(true);
+    if(click === 1){
+      setOpt(true);
+      setClick(prev => prev+1)
+    }else{
+      setOpt(false);
+      setClick(prev => prev-1)
+    }
   };
   const comments = () => {
     if(click === 1){
@@ -72,7 +77,7 @@ function Post({ post, setPosts }) {
           </span>
           {post.url ? (
             <img
-              src={post?.url ? post.url : "Ajmal K A"}
+              src={post?.url ? post.url : ""}
               alt="postImg"
               className="postImg"
             />
@@ -102,7 +107,7 @@ function Post({ post, setPosts }) {
             </span>
           </div>
         </div>
-        {comment ? <Comments post={post} setPosts={setPosts} /> : ""}
+        {comment ? <Comments post={post} setPosts={setPosts} profilePicture={profilePicture} /> : ""}
       </div>
     </div>
   );

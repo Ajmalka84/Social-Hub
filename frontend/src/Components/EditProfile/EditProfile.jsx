@@ -3,6 +3,7 @@ import "./EditProfile.css";
 import { AuthContext } from "../../context/AuthContext";
 import AxiosWithAuth from "../../Axios/Axios";
 import jwtDecode from "jwt-decode";
+import Topbar from "../Topbar/Topbar";
 
 function EditProfile() {
   const { Auth } = useContext(AuthContext);
@@ -16,7 +17,7 @@ function EditProfile() {
     decodedAuth.profilePicture ? decodedAuth?.profilePicture : ""
   );
   const [coverPic, setCoverPic] = useState(
-    decodedAuth?.profilePicture ? decodedAuth.coverPicture : ""
+    decodedAuth?.coverPicture ? decodedAuth.coverPicture : ""
   );
   const axiosJWT = AxiosWithAuth();
   const handleSubmit = async (event) => {
@@ -46,7 +47,7 @@ function EditProfile() {
      const formData = new FormData;
      formData.append('userId' , decodedAuth._id)
      formData.append('coverPicture' , coverPic)
-     await axiosJWT.post("users/profile-picture", formData , { "Content-Type": "multipart/form-data"}).then((result)=>{
+     await axiosJWT.post("users/cover-picture", formData , { "Content-Type": "multipart/form-data"}).then((result)=>{
       console.log(result)
      }).catch((error)=>{
       console.log(error)
@@ -61,6 +62,8 @@ function EditProfile() {
   };
 
   return (
+    <>
+    <Topbar />
     <div className="allContainer">
       <div className="container">
         <h1>Edit Profile</h1>
@@ -141,6 +144,7 @@ function EditProfile() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

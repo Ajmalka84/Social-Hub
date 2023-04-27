@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import HashLoader from "react-spinners/HashLoader";
 import { AuthContext } from "./context/AuthContext";
 import jwt_decode from "jwt-decode";
@@ -9,7 +9,7 @@ function PersistLogin() {
   const { Auth , persist } = useContext(AuthContext);
   let [color, setColor] = useState("#000000");
   const refresh = useRefreshToken()
-  console.log(Auth.accessToken)
+  
   useEffect(() => {
     const verifyRefreshToken = async () => {
       try {

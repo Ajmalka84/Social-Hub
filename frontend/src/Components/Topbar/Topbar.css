@@ -95,3 +95,32 @@
   object-fit: cover;
   cursor: pointer;
 }
+
+.dropdown {
+  position: absolute;
+  top: 40px; /* adjust this value based on your design */
+  width: 100%;
+  max-width: 695px;
+  z-index: 999;
+  background-color:white;
+  border: 0px solid gray;
+  border-radius: 10px;
+}
+
+.dropdown ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dropdown ul li {
+  color: black;
+  padding: 12px;
+  padding-left: 20px;
+  border-bottom: 1px solid #ccc;
+}
+
+.dropdown ul li:hover {
+  background-color: #f1f1f1;
+  border-radius: 10px;
+}

@@ -11,6 +11,8 @@ const {
   profileEdit,
   updateProfilePic,
   updateCoverPic,
+  getProfilePic,
+  getMainUser,
 } = require("../Controllers/UserControllers");
 const multer = require("multer");
 const storage = multer.memoryStorage();
@@ -29,6 +31,9 @@ router.post("/search", verify, searchUser);
 //get user
 router.get("/:id", verify, getaUser);
 
+//get main user for rightbar profile
+router.get("/get-main-user/:id", verify, getMainUser);
+
 // get friends
 router.get("/friends/:userId", verify, getFriends);
 
@@ -46,5 +51,9 @@ router.post("/profile-picture", verify, upload.single('profilePicture') ,  updat
 
 // Edit Users Cover Picture
 router.post("/cover-picture", verify, upload.single('coverPicture') ,  updateCoverPic ); 
+
+// get the users profile picture
+router.post("/get-profile-picture", verify,  getProfilePic ); 
+
 
 module.exports = router;

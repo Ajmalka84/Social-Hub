@@ -1,34 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { createContext, useReducer } from "react";
-// import AuthReducer from "./AuthReducer";
-// const INITIAL_STATE = {
-//   user: null,
-//   isFetching: false,
-//   error: false,
-// };
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+} from "firebase/auth";
+import { auth } from "../firebase";
 
-// export const AuthContext = createContext(INITIAL_STATE);
 export const AuthContext = createContext();
 
 export const AuthContextProvider = ({ children }) => {
-  // const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
   const [Auth, setAuth] = useState({});
+  const [AdminAuth, setAdminAuth] = useState({});
+  const [DP, setDP] = useState("");
   const [persist, setPersist] = useState(
     JSON.parse(localStorage.getItem("persist")) || false
   );
-  // Load user data from local storage
-  // useEffect(() => {
-  //   const userData = JSON.parse(localStorage.getItem("user"));
-  //   if (userData) {
-  //     dispatch({ type: "LOGIN_SUCCESS", payload: userData });
-  //   }
-  // }, []);
+  function googleSignIn() {
+    const googleAuthProvider = new GoogleAuthProvider();
+    return signInWithPopup(auth, googleAuthProvider);
+  }
 
-  // Save user data to local storage whenever the state changes
-  // useEffect(() => {
-  //   localStorage.setItem("user", JSON.stringify(state.user));
-  // }, [state.user]);
-
+  function setUpRecaptcha(number) {
+    console.log(number);
+    const recaptchaVerifier = new RecaptchaVerifier(
+      "recaptcha-container",
+      {},
+      auth
+    );
+    recaptchaVerifier.render();
+    return signInWithPhoneNumber(auth, number, recaptchaVerifier);
+  }
   return (
     <AuthContext.Provider
       value={{
@@ -36,6 +39,12 @@ export const AuthContextProvider = ({ children }) => {
         setAuth,
         persist,
         setPersist,
+        DP,
+        setDP,
+        AdminAuth,
+        setAdminAuth,
+        googleSignIn,
+        setUpRecaptcha
       }}
     >
       {children}

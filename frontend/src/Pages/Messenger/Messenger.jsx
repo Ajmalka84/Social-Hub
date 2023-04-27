@@ -6,32 +6,71 @@ import Message from "../../Components/Message/Message";
 import ChatOnline from "../../Components/ChatOnline/ChatOnline";
 import { AuthContext } from "../../context/AuthContext";
 import AxiosWithAuth from "../../Axios/Axios";
+import jwtDecode from "jwt-decode";
+import {io} from "socket.io-client"
 function Messenger() {
-  const {user} = useContext(AuthContext);
+  const {Auth} = useContext(AuthContext);
+  const decodedAuth = jwtDecode(Auth.accessToken)
   const [conversations , setConversations] = useState([])
   const [currentChat , setCurrentChat] = useState(null);
   const [messages , setMessages] = useState([]);
   const [newMessages , setNewMessages] = useState('');
+  const [arrivalMessages , setArrivalMessages] = useState(null);
+  const [onlineUsers , setOnlineUsers] = useState(null);
+  const socket = useRef()
   const axiosJWT = AxiosWithAuth();
   const scrollRef = useRef()
+  
+
+  useEffect(()=>{
+    socket.current = io("ws://localhost:8900")
+    socket.current.on("getMessage" ,data =>{
+       setArrivalMessages({
+        sender : data.senderId,
+        text : data.text,
+        createdAt : Date.now(),
+       })
+    })
+  },[])
+  
+  useEffect(()=>{
+    arrivalMessages && currentChat?.members.includes(arrivalMessages.sender) && setMessages((prev)=> [...prev,arrivalMessages])
+  },[arrivalMessages , currentChat])
+
+  useEffect(()=>{
+    let mainUser;
+    const fetchMainUser = async()=>{
+      const User = await axiosJWT.get(`users/get-main-user/${decodedAuth._id}`)
+      mainUser = User.data
+      socket.current.emit("addUser" , decodedAuth._id)
+      socket.current.on("getUsers", users =>{
+       console.log(mainUser.followings[0].userId)
+       console.log(users)
+       console.log(mainUser.followings.filter((f)=> users.some((u) => u.userId == f.userId)),"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
+       setOnlineUsers(mainUser.followings.filter((f)=> users.some((u) => u.userId == f.userId)))
+      })
+    }
+    fetchMainUser()
+   console.log(onlineUsers) 
+  }, [])
+
 
   useEffect(()=>{
      const getConversations = async ()=>{
       try {
-        const res = await axiosJWT.get(`conversations/${user._doc._id}`)
-        setConversations(res.data)
-        
+        const res = await axiosJWT.get(`conversations/${decodedAuth._id}`)
+        setConversations(res.data)       
       } catch (error) {
         console.log(error)
       } 
      }
      getConversations() 
-  }, [user._doc._id , ])
+  }, [decodedAuth._id])
 
   useEffect(()=>{
      const getMessages = async ()=>{
       try {
-        const res = await axiosJWT.get(`messages/${currentChat._id}`)
+        const res = await axiosJWT.get(`messages/${currentChat?._id}`)
         setMessages(res.data)
       } catch (error) {
         console.log(error)
@@ -43,10 +82,13 @@ function Messenger() {
   const handleSubmit = async(e) =>{
     e.preventDefault();
     const message = {
-      sender : user._id,
+      sender : decodedAuth._id,
       text : newMessages,
       conversationId : currentChat._id
     }
+    let recieverId = currentChat.members.find(member => member !== decodedAuth._id)
+    console.log(recieverId)
+    socket.current.emit("sendMessage" , {senderId : decodedAuth._id} ,{ recieverId : recieverId}, {text : newMessages  })
     try {
       const res = await axiosJWT.post('messages' , message)
       setMessages([...messages , res.data]);
@@ -55,6 +97,8 @@ function Messenger() {
       console.log(error)
     }
   }
+
+  
 
   useEffect(()=>{
     scrollRef.current?.scrollIntoView({behavior : "smooth"})
@@ -66,9 +110,9 @@ function Messenger() {
         <div className="chatMenu">
           <div className="chatMenuWrapper">
             <input type="text" placeholder="Search for friends" className="chatMenuInput" />
-            {conversations.map((c) =>
+            {conversations.map((c) => 
               <div onClick={()=>setCurrentChat(c)}>
-                <Conversation conversation={c} currentUser={user}/>
+                <Conversation conversation={c} currentUser={decodedAuth}/>
               </div>
             )}  
           </div>
@@ -81,7 +125,7 @@ function Messenger() {
             <div className="chatBoxTop">
               {messages.map((m)=> (
                 <div ref={scrollRef}>
-                <Message message={m} own={m.sender === user._id}/>
+                <Message message={m} own={m.sender === decodedAuth._id}/>
                 </div>              
               ))}
             </div>
@@ -94,10 +138,10 @@ function Messenger() {
         </div>
         <div className="chatOnline">
           <div className="chatOnlineWrapper">
-             <ChatOnline />
-             <ChatOnline />
-             <ChatOnline />
-             <ChatOnline />
+            {onlineUsers && 
+            <ChatOnline onlineUsers={onlineUsers} currentId={decodedAuth._id} setCurrentChat={setCurrentChat}/>
+            }
+             
           </div>
         </div>
       </div>

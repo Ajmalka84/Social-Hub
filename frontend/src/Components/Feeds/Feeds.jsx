@@ -5,7 +5,7 @@ import Share from "../Share/Share";
 import "./Feeds.css";
 import AxiosWithAuth from "../../Axios/Axios";
 import jwtDecode from "jwt-decode";
-function Feeds({ feedProfile , otherUser}) {
+function Feeds({profilePicture, feedProfile , otherUser}) {
   const { Auth } = useContext(AuthContext);
   const AxiosJWT = AxiosWithAuth();
   const decodedAuth = jwtDecode(Auth.accessToken)
@@ -20,7 +20,7 @@ function Feeds({ feedProfile , otherUser}) {
         })
         .catch((error) => {
           console.log(error);
-        });
+        }); 
       };
       allUserPosts();
     } else {
@@ -42,10 +42,10 @@ function Feeds({ feedProfile , otherUser}) {
     return (
       <div className="feeds">
         <div className="feedWrapper">
-          {otherUser?._id === decodedAuth?._id && <Share setPosts={setPosts}/> }
-          {userPosts.map((p) => {
-            return <Post key={p._id} post={p} setPosts={setPosts} />;
-          })}
+          {otherUser?._id === decodedAuth?._id && <Share setPosts={setUserPosts} profilePicture={profilePicture}/> }
+          { userPosts.length >= 1 ? userPosts.map((p) => {
+            return <Post key={p._id} post={p} setPosts={setUserPosts} profilePicture={profilePicture}/>;
+          }) : <h2>No Posts Yet...</h2>}
         </div>
       </div>
     );
@@ -56,9 +56,9 @@ function Feeds({ feedProfile , otherUser}) {
       <>
         <div className="feeds">
           <div className="feedWrapper">
-            <Share setPosts={setPosts} />
+            <Share setPosts={setPosts} profilePicture={profilePicture} />
             {posts.map((p) => {
-              return <Post key={p._id} post={p} setPosts={setPosts} />;
+              return <Post key={p._id} post={p} setPosts={setPosts} profilePicture={profilePicture}/>;
             })}
           </div>
         </div>

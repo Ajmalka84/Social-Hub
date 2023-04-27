@@ -19,6 +19,14 @@ const postSchema = new mongoose.Schema(
     comments : {
       type : Array, 
       default : []
+    },
+    reports : {
+      type : Array, 
+      default : []
+    },
+    blocked : {
+      type : Boolean, 
+      default : false
     }
   },
   { timestamps: true }

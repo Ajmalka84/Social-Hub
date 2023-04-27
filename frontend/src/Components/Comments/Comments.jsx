@@ -6,8 +6,7 @@ import { AuthContext } from "../../context/AuthContext";
 import AxiosWithAuth from "../../Axios/Axios";
 import jwtDecode from "jwt-decode";
 
-const Comments = ({ post, setPosts }) => {
-  console.log(post)
+const Comments = ({ profilePicture,  post, setPosts }) => {
   const axiosJWT = AxiosWithAuth();
   const { Auth } = useContext(AuthContext);
   const decodedAuth = jwtDecode(Auth.accessToken);
@@ -33,9 +32,9 @@ const Comments = ({ post, setPosts }) => {
   return (
     <div className="comments">
       <div className="write">
-      {post?.comments?.userDetails?.profilePicture ? <img src={post.comments.userDetails.url3} alt="" className="img" /> : <img src="/assets/NoPhoto.jpg" alt="shareImg" className="postProfileImg" />}
+      {decodedAuth?.profilePicture ? <img src={profilePicture} alt="" className="img" /> : <img src="/assets/NoPhoto.jpg" alt="shareImg" className="postProfileImg" />}
         
-        <input type="text" ref={commentInput} placeholder="write a comment" />
+        <input type="text"style={{marginBottom:"0px"}} ref={commentInput} placeholder="write a comment" />
         <button onClick={submitComment}>Send</button>
       </div>
       {post.comments.map((comment) => (

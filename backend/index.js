@@ -11,6 +11,7 @@ const authRoute = require("./routes/auth");
 const postRoute = require("./routes/post");
 const conversationsRoute = require("./routes/Conversations");
 const messagesRoute = require("./routes/Messages");
+const adminRoute = require("./routes/Admin");
 
 dotenv.config();
 mongoose.set("strictQuery", true); // for avoiding the strictQuery warning
@@ -40,6 +41,7 @@ app.use("/auth", authRoute);
 app.use("/post", postRoute);
 app.use("/conversations", conversationsRoute);
 app.use("/messages", messagesRoute);
+app.use("/admin", adminRoute);
 app.listen("8000", () => console.log("server started running on port"));
 
 // service sid for social hub : VAbe3d07efe254eebf5ccdf6c7a4b6abce
