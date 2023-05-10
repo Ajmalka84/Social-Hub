@@ -6,16 +6,34 @@ import { AuthContext } from "../../context/AuthContext";
 import AxiosWithAuth from "../../Axios/Axios";
 import jwtDecode from "jwt-decode";
 import Cookies from 'js-cookie';
+import NotificationList from "../NotificationList/NotificationList";
 function Topbar({ profilePicture, setProfilePicture }) {
+  
   const { Auth } = useContext(AuthContext);
   const navigate = useNavigate()
   const decodedAuth = jwtDecode(Auth.accessToken);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const [click, setClick] = useState(1);
+  const [notifications, setNotifications] = useState(false);
   const axiosJWT = AxiosWithAuth();
+  const [notification, setNotification] = useState();
   const handleInputChange = (event) => {
     setQuery(event.target.value);
   };
+  useEffect(() => {
+    const getNotifications = async () => {
+      await axiosJWT
+        .get(`users/${decodedAuth._id}/get-notifications`)
+        .then((result) => {
+          setNotification([...result.data]);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    };
+    getNotifications();
+  }, []);
   const dropdownRef = useRef()
   const handleClickOutside = (event) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -49,7 +67,15 @@ function Topbar({ profilePicture, setProfilePicture }) {
     };
     searchResults();
   }, [query]);
-
+  const showNotifications = ()=> {
+    if(click === 1){
+      setNotifications(true);
+      setClick(prev => prev+1)
+    }else{
+      setNotifications(false);
+      setClick(prev => prev-1)
+    }
+  }
   useEffect(() => {
     const loadProfilePicture = async () => {
       await axiosJWT
@@ -108,20 +134,25 @@ function Topbar({ profilePicture, setProfilePicture }) {
           
         </div>
         <div className="topbarIcons">
-          <div className="topbarIconItem">
+          {/* <div className="topbarIconItem">
             <Person />
             <span className="topbarIconBadge">1</span>
-          </div>
+          </div> */}
           <div className="topbarIconItem">
-            <Link to={"/messenger"}>
+            <Link to={"/messenger"} style={{ color : "white" }}>
               <Chat />
             </Link>
-            <span className="topbarIconBadge">2</span>
+            {/* <span className="topbarIconBadge">2</span> */}
           </div>
-          <div className="topbarIconItem">
+          <div className="topbarIconItem" onClick={showNotifications}>
             <Notifications />
-            <span className="topbarIconBadge">1</span>
+            {
+              notification?.filter((n)=>n.status ==="Unread").length === 0 ? '' :
+            <span className="topbarIconBadge">{notification?.filter((n)=>n.status ==="Unread").length}</span>
+            }
           </div>
+          {notifications && 
+          <NotificationList />}
         </div>
         <Link to={`/profile/${decodedAuth?._id}`}>
           {decodedAuth?.profilePicture ? (

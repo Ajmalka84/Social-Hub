@@ -19,9 +19,10 @@ const useRefreshToken = () => {
       })
       .catch((error) => {
         console.log(error);
-      }).finally(()=>{
         navigate('/login')
       })
+      // .finally(()=>{
+      // })
   };
   return refresh;
 };

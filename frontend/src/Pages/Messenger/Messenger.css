@@ -30,6 +30,7 @@
     overflow-y: scroll;
     padding-right: 10px;
 }
+
 .chatBoxBottom{
     margin-top: 5px;
     display: flex;
@@ -70,3 +71,12 @@
     text-align: center;
     cursor: default;
 }
+
+.chatTo{
+    background-color: #c4cad1;
+    height: 60px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+}
+

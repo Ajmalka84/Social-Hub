@@ -1,15 +1,16 @@
 import React, { useContext, useState } from 'react';
 import './Login.css';
-import AxiosAdminJwt from '../../Axios/AxiosAdmin';
+import axios from 'axios';
+
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-
+// import AxiosAdminJwt from '../../Axios/AxiosAdmin';
 const AdminLogin = () => {
+  // const axiosAdmin = AxiosAdminJwt()
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validated, setValidated] = useState(false);
   const [errors, setErrors] = useState({});
-  const AxiosAdmin = AxiosAdminJwt()
   const navigate = useNavigate()
   const {AdminAuth , setAdminAuth} = useContext(AuthContext)
   const handleInputChange = (event) => {
@@ -27,20 +28,12 @@ const AdminLogin = () => {
   const handleSubmit = async(event) => {
     event.preventDefault();
     try {
-      const res = await AxiosAdmin.post('login', {email : email , password : password})
+      const res = await axios.post("http://localhost:8000/admin/login", {email : email , password : password})
       setAdminAuth(prev => ({...prev,...res.data}));
-      navigate('/admin')
+      navigate('/admin' , {replace : true})
     } catch (error) {
       console.log(error)
     }
-
-    // if (form.checkValidity() === false) {
-    //   event.stopPropagation();
-    //   setValidated(true);
-    // } else {
-    //   setValidated(false);
-    //   alert(`Email: ${email} Password: ${password}`);
-    // }
   };
 
   return (

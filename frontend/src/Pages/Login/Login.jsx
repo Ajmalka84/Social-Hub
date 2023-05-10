@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Login.css";
 import { AuthContext } from "../../context/AuthContext";
+import { Toaster, toast } from "react-hot-toast";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -39,10 +40,11 @@ function Login() {
       )
       .then((result) => {
         // dispatch({ type: "LOGIN_SUCCESS", payload: result.data });
-        setAuth((prevAuth) => ({ ...prevAuth, ...result.data }));
+        setAuth((prevAuth) => ({ ...prevAuth , ...result.data}));
         navigate(from, { replace : true });
       })
       .catch((error) => {
+        toast.error(`${error.response.data}`)
         console.log(error);
       });
 
@@ -64,7 +66,7 @@ function Login() {
 
   useEffect(() => {
     localStorage.setItem("persist", persist);
-  }, [persist]);
+  }, [persist]); 
 
   return (
     <div className="login">
@@ -105,6 +107,7 @@ function Login() {
               </button>
             </form>
           )}
+          <Toaster position="top-center" reverseOrder={false} />
         </div>
       </div>
     </div>

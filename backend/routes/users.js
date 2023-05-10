@@ -13,6 +13,8 @@ const {
   updateCoverPic,
   getProfilePic,
   getMainUser,
+  getNotifications,
+  markNotification,
 } = require("../Controllers/UserControllers");
 const multer = require("multer");
 const storage = multer.memoryStorage();
@@ -37,14 +39,20 @@ router.get("/get-main-user/:id", verify, getMainUser);
 // get friends
 router.get("/friends/:userId", verify, getFriends);
 
+// get the users notifications
+router.get("/:userId/get-notifications", verify , getNotifications );
+
+// mark as read notifications
+router.get("/:notificationId/read", verify , markNotification );
+
 //follow user
 router.put("/:id/follow", verify, follow);
 
 //unfollow user
 router.put("/:id/unfollow", verify, unfollow);
 
-// Edit User
-router.post("/user", verify,  profileEdit); 
+// Edit Users Profile Details
+router.post("/profile-edit", verify,  profileEdit ); 
 
 // Edit Users Profile Picture
 router.post("/profile-picture", verify, upload.single('profilePicture') ,  updateProfilePic ); 
@@ -54,6 +62,7 @@ router.post("/cover-picture", verify, upload.single('coverPicture') ,  updateCov
 
 // get the users profile picture
 router.post("/get-profile-picture", verify,  getProfilePic ); 
+
 
 
 module.exports = router;

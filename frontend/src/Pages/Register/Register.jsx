@@ -5,6 +5,7 @@ import "./Register.css";
 import axios from "axios";
 import Otp from "../../Components/Otp/Otp";
 import Input from "../../Components/Input/Input";
+
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -110,6 +111,7 @@ function Register() {
               {Error && <p className="errorMessage">{Error}</p>}
             </form>
           )}
+          
         </div>
       </div>
     </div>

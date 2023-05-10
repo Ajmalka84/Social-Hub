@@ -65,7 +65,10 @@
 .rightbarFollowings{
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;   
+    justify-content: flex-start;
+    height: 300px;
+    overflow-y: scroll;
+   
 }
 
 .rightbarFollowing{
@@ -73,6 +76,7 @@
     flex-direction: column;
     align-items: center;
     margin-bottom: 20px;
+    margin-right: 10px;
     cursor: pointer;
 }
 

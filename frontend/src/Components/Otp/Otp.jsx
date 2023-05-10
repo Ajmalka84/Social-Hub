@@ -4,7 +4,7 @@ import OTPInput, { ResendOTP } from "otp-input-react";
 import axios from "axios";
 import "./Otp.css";
 import ChangePassword from "../ChangePassword/ChangePassword";
-
+import { Toaster, toast } from "react-hot-toast";
 function Otp({ user }) {
   const [otpMessage, setOtpMessage] = useState(
     `We have sent OTP to ${user.mobile}. Enter the OTP below`
@@ -54,7 +54,10 @@ function Otp({ user }) {
           otp: otp,
         }
       );
-      navigate("/");
+      setTimeout(() => {
+        toast.success("Registration Success")
+      }, 500);
+      navigate("/login");
     } catch (error) {
       console.log(error);
       // setError("something went wrong. Please try again")
@@ -107,6 +110,7 @@ function Otp({ user }) {
             Log into Account
           </button>
           {Error && <p className="errorMessage">{Error}</p>}
+          <Toaster position="top-center" reverseOrder={false} />
         </div>
       )}
     </>

@@ -31,6 +31,7 @@ app.use(
   })
 );
 
+// app.use(cors({origin: '*'}));
 //middleware
 app.use(express.json()); //use() accepts 2 arguments. 1st one is the string which is mostly the url. 2nd one is the middleware function which has to work when recieving the request from the specified route. if we havent mentioned the route or 1st argument the 2nd argument works in every request. json() converts every json data that are coming as request into objects which is readable by the server.
 app.use(helmet());

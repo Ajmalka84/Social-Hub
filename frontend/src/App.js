@@ -25,8 +25,13 @@ function App() {
     <BrowserRouter>
       <Routes path="/" element={<Outlet />}>
         <Route path="login" element={<Login />} />
-        {/* <Route path="admin" element={<AdminRoutes />} /> */}
         <Route path="register" element={<Register />} />
+        <Route element={<PersistLogin />}>
+          <Route path="/" element={<Home />} />
+          <Route path="profile/:_id" element={<Profile />} />
+          <Route path="profile/edit" element={<EditProfile />} />
+          <Route path="messenger" element={<Messenger />} />
+        </Route>
 
         <Route path="admin/login" element={<AdminLogin />} />
         <Route path="admin/logout" element={<AdminLogin />} />
@@ -67,12 +72,6 @@ function App() {
           }
         />
 
-        <Route element={<PersistLogin />}>
-          <Route path="/" element={<Home />} />
-          <Route path="profile/:_id" element={<Profile />} />
-          <Route path="profile/edit" element={<EditProfile />} />
-          <Route path="messenger" element={<Messenger />} />
-        </Route>
       </Routes>
     </BrowserRouter>
   );

@@ -1,13 +1,14 @@
 import React, { useContext, useEffect, useState } from "react";
 import "./Rightbar.css";
 import { AuthContext } from "../../context/AuthContext";
-import { Users } from "../../dummy";
+
 import Online from "../Online/Online";
 import AxiosWithAuth from "../../Axios/Axios";
 import { Link } from "react-router-dom";
 import { Add, Remove } from "@mui/icons-material";
 import jwtDecode from "jwt-decode";
 function Rightbar({ profile, RightbarUser }) {
+  const axiosJWT = AxiosWithAuth();
   const { Auth } = useContext(AuthContext);
   const decodedAuth = jwtDecode(Auth.accessToken);
   const [friends, setFriends] = useState([]);
@@ -15,12 +16,11 @@ function Rightbar({ profile, RightbarUser }) {
     const mainUser = await axiosJWT.get(
       `users/get-main-user/${decodedAuth._id}`
     );
-    const rightbarUserId = RightbarUser._id.toString();
+    const rightbarUserId = RightbarUser?._id.toString();
     return mainUser?.data?.followings.some(
       (following) => following.userId === rightbarUserId
     );
   });
-  const axiosJWT = AxiosWithAuth();
 
   useEffect(() => {
     const getFriends = async () => {
@@ -43,7 +43,7 @@ function Rightbar({ profile, RightbarUser }) {
         `users/get-main-user/${decodedAuth._id}`
       );
 
-      const rightbarUserId = RightbarUser._id.toString(); // convert ObjectId to string
+      const rightbarUserId = RightbarUser?._id.toString(); // convert ObjectId to string
       setFollowed(
         mainUser?.data?.followings.some(
           (following) => following.userId === rightbarUserId
@@ -74,18 +74,18 @@ function Rightbar({ profile, RightbarUser }) {
     return (
       <>
         <div className="birthdayContainer">
-          <img src="/assets/gift.png" alt="" className="birthdayImg" />
+          {/* <img src="/assets/gift.png" alt="" className="birthdayImg" /> */}
           <span className="birthdayText">
-            <b>Pola Foster</b> and <b>3 other friends</b> have birthday today.
+            {/* <b>Pola Foster</b> and <b>3 other friends</b> have birthday today. */}
           </span>
         </div>
         <img src="/assets/ad.jpg" alt="ad" className="rightbarAd" />
-        <h4 className="rightbarTitle">Online Friends</h4>
+        {/* <h4 className="rightbarTitle">Online Friends</h4>
         <ul className="rightbarFriendList">
           {Users.map((u) => (
             <Online key={u.id} user={u} />
           ))}
-        </ul>
+        </ul> */}
       </>
     );
   };

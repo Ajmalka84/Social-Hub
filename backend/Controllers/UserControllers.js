@@ -6,6 +6,7 @@ const {
 } = require("../middlewares/middleware");
 const User = require("../model/User");
 const post = require("../model/Post");
+const notifications = require("../model/Notifications");
 const Conversation = require("../model/Conversation");
 const Message = require("../model/Message");
 const jwt = require("jsonwebtoken");
@@ -24,6 +25,7 @@ const {
   req,
 } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const Post = require("../model/Post");
 const s3_bucket_name = process.env.S3_BUCKET_NAME;
 const s3_region = process.env.S3_REGION;
 const s3_access_key = process.env.S3_ACCESS_KEY;
@@ -78,7 +80,7 @@ module.exports = {
 
   login: async (req, res) => {
     try {
-      let user = await User.findOne({ email: req.body.email });
+      let user = await User.findOne({ email: req.body.email , blocked : false });
       if (!user) {
         return res.status(400).json("user not found");
       }
@@ -122,7 +124,6 @@ module.exports = {
         }
       })
       .catch((error) => {
-        console.log(error);
         res.json("something wrong with twilio client");
       });
   },
@@ -141,7 +142,6 @@ module.exports = {
         res.status(404).json("User not found.");
       }
     } catch (error) {
-      console.log(error);
       res.status(500).json(error);
     }
   },
@@ -158,7 +158,6 @@ module.exports = {
         res.status(200).json("password changed successfully");
       })
       .catch((error) => {
-        console.log(error);
         res.status(500).json(error);
       });
   },
@@ -177,10 +176,11 @@ module.exports = {
       process.env.REFRESH_TOKEN_SECRET_KEY,
       async (error, payload) => {
         if (error) {
-          console.log(error, "error is here");
+          refreshTokens = refreshTokens.filter(
+            (token) => token !== refreshToken
+          );
           return res.status(403).json("refreshToken is not valid");
         }
-        // refreshTokens = refreshTokens.filter((token) => token !== refreshToken);
         const newPayload = modifyPayload(payload);
         const newAccessToken = createAccessToken(newPayload);
         res.status(200).json({ accessToken: newAccessToken });
@@ -225,9 +225,25 @@ module.exports = {
     }
   },
 
+  updatePost: async (req, res) => {
+    try {
+      const findPost = await post.findById(req.body.postId);
+      if (findPost.userId === req.body.userId) {
+        const editPost = await post.findByIdAndUpdate(req.body.postId, {
+          desc: req.body.desc,
+        });
+        res.status(200).json(editPost);
+      } else {
+        res.status(401).json("you are not Authorised to edit the post");
+      }
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
+
   allPosts: async (req, res) => {
     try {
-      const posts = await post.find({}).sort({ createdAt: -1 });
+      const posts = await post.find({blocked : false}).sort({ createdAt: -1 });
       for (const post of posts) {
         post._doc.userDetails = await User.findOne({ _id: post._doc.userId });
         const comments = post._doc.comments;
@@ -279,25 +295,19 @@ module.exports = {
     }
   },
 
-  updatePost: async (req, res) => {
-   
-    const updatePost = await post.findById(req.params.id);
-    if (req.body.userId === updatePost.userId) {
-      const updatedPost = await updatePost.updateOne({ $set: req.body });
-      res.status(200).json("Your post updated succesfully");
-    } else {
-      res.status(403).json("you can only update your post");
-    }
-  },
-  
   reportPost: async (req, res) => {
     try {
-      console.log("first")
-      const reportPost = await post.findByIdAndUpdate(req.params.id , {$push : {reports : req.params.id}});
-      console.log(reportPost)
-      res.status(200).json(reportPost)
+      const checkReportPost =  await post.findById(req.params.id)
+      if(checkReportPost.reports.includes(req.body.reportedUser)){
+        res.status(200).json({message : "Cannot Report Twice"})
+      }else{
+        const reportPost = await post.findByIdAndUpdate(req.params.id, {
+          $push: { reports: req.body.reportedUser },
+        });
+        res.status(200).json(reportPost);
+      }
     } catch (error) {
-      res.status(500).json(error)
+      res.status(500).json(error);
     }
   },
 
@@ -315,14 +325,60 @@ module.exports = {
     }
   },
 
+  deletePostComment: async (req, res) => {
+    try {
+      const deleteComment = await post.findById(req.params.id);
+      if (
+        req.body.postOwner == deleteComment.userId ||
+        deleteComment.comments.some({ userId: req.body.req.body.commentOwner })
+      ) {
+        const deletedComment = await post.findByIdAndUpdate(req.params.id, {
+          $pull: {
+            comments: {
+              userId: req.body.commentOwner,
+              text: req.body.text,
+              time: req.body.time,
+            },
+          },
+        });
+        res.status(200).json("Your Comment deleted succesfully");
+      } else {
+        res.status(403).json("you can only delete your post");
+      }
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
+
   likePost: async (req, res) => {
     try {
       const likePost = await post.findById(req.params.id);
       if (!likePost.likes.includes(req.body.userId)) {
-        await likePost.updateOne({ $push: { likes: req.body.userId } });
+        await likePost
+          .updateOne({ $push: { likes: req.body.userId } })
+          .then(async (result) => {
+            await User.findById(req.body.userId).then(async (result) => {
+              const newNotifications = new notifications({
+                text: `${result.username} and ${likePost.likes.length} other people liked your post`,
+                userId: likePost.userId,
+                status: "Unread",
+              });
+              const savedNotifications = await newNotifications.save();
+            });
+          });
         res.status(200).json({ status: true, message: "liked the post" });
       } else {
-        await likePost.updateOne({ $pull: { likes: req.body.userId } });
+        await likePost
+          .updateOne({ $pull: { likes: req.body.userId } })
+          .then(async (result) => {
+            await User.findById(req.body.userId).then(async (result) => {
+              const newNotifications = new notifications({
+                text: `${result.username} disliked your post`,
+                userId: likePost.userId,
+              });
+              const savedNotifications = await newNotifications.save();
+            });
+          });
         res.status(200).json({ status: false, message: "disliked" });
       }
     } catch (error) {
@@ -345,6 +401,15 @@ module.exports = {
         })
         .then(async (result) => {
           const updatedPost = await post.findById(req.params.id);
+          await User.findById(req.body.userId).then(async (result) => {
+            const newNotifications = new notifications({
+              text: `${result.username} commented on your post`,
+              userId: updatedPost.userId,
+              status: "Unread",
+            });
+            const savedNotifications = await newNotifications.save();
+          });
+
           res.status(200).json(updatedPost);
         });
     } catch (error) {
@@ -365,9 +430,11 @@ module.exports = {
     //the route should include something other than timeline because as /:id has already been given this timeline will go to that root. instead of avoiding that we should give something other than that.
     try {
       const currentUser = await User.findById(req.params.userId);
-      const currentUserPosts = await post.find({ userId: req.params.userId });
-      for(const currentUserPost of currentUserPosts){
-        currentUserPost._doc.userDetails = await User.findOne({ _id: currentUserPost._doc.userId });
+      const currentUserPosts = await post.find({ userId: req.params.userId , blocked : false}).sort({_id : -1});
+      for (const currentUserPost of currentUserPosts) {
+        currentUserPost._doc.userDetails = await User.findOne({
+          _id: currentUserPost._doc.userId,
+        });
         const comments = currentUserPost._doc.comments;
         if (comments.length >= 0) {
           for (const comment of comments) {
@@ -416,60 +483,6 @@ module.exports = {
       //   })
       // );
       res.json(currentUserPosts);
-    } catch (error) {
-      res.status(500).json(error);
-    }
-  },
-
-  allPosts: async (req, res) => {
-    try {
-      const posts = await post.find({}).sort({ createdAt: -1 });
-      for (const post of posts) {
-        post._doc.userDetails = await User.findOne({ _id: post._doc.userId });
-        const comments = post._doc.comments;
-        if (comments.length >= 0) {
-          for (const comment of comments) {
-            comment.userDetails = await User.findOne({ _id: comment.userId });
-            const downloadParams3 = {
-              Bucket: s3_bucket_name,
-              Key: comment?.userDetails?.profilePicture,
-            };
-            if (comment.userDetails.profilePicture != undefined) {
-              const command3 = new GetObjectCommand(downloadParams3);
-              const url3 = await getSignedUrl(s3, command3, {
-                expiresIn: 600000,
-              });
-              comment.userDetails._doc.url3 = url3;
-            }
-          }
-        }
-        const downloadParams = {
-          Bucket: s3_bucket_name,
-          Key: post?._doc.img,
-        };
-        const downloadParams2 = {
-          Bucket: s3_bucket_name,
-          Key: post?._doc.userDetails?.profilePicture,
-        };
-        if (
-          post._doc.userDetails.profilePicture == undefined &&
-          post.img == undefined
-        ) {
-          continue;
-        }
-        if (post.img != undefined) {
-          const command = new GetObjectCommand(downloadParams);
-          const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
-          post._doc.url = url;
-        }
-        if (post._doc.userDetails.profilePicture != undefined) {
-          const command2 = new GetObjectCommand(downloadParams2);
-          const url2 = await getSignedUrl(s3, command2, { expiresIn: 600000 });
-          post._doc.userDetails._doc.url2 = url2;
-        }
-      }
-
-      res.status(200).json(posts);
     } catch (error) {
       res.status(500).json(error);
     }
@@ -525,56 +538,56 @@ module.exports = {
   getaUser: async (req, res) => {
     try {
       const user = await User.findById(req.params.id);
-      console.log(user._doc)
-      console.log(user._doc.followings)
-      
-      if(user?._doc?.profilePicture){
+
+      if (user?._doc?.profilePicture) {
         const downloadParams = {
           Bucket: s3_bucket_name,
           Key: user.profilePicture,
-        }
+        };
         const command = new GetObjectCommand(downloadParams);
-          const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
-          user._doc.url = url;
-      }   
-      if(user?._doc?.coverPicture){
+        const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
+        user._doc.url = url;
+      }
+      if (user?._doc?.coverPicture) {
         const downloadParams1 = {
           Bucket: s3_bucket_name,
           Key: user.coverPicture,
-        }
+        };
         const command1 = new GetObjectCommand(downloadParams1);
-          const url1 = await getSignedUrl(s3, command1, { expiresIn: 600000 });
-          user._doc.url1 = url1;
-      }   
+        const url1 = await getSignedUrl(s3, command1, { expiresIn: 600000 });
+        user._doc.url1 = url1;
+      }
       res.status(200).json(user._doc);
     } catch (error) {
       res.status(500).json(error);
     }
   },
 
-  getMainUser : async(req , res)=>{
-    console.log(req.params.id)
-    await User.findOne({_id : req.params.id}).then((result)=>{
-      res.status(200).json(result)
-    }).catch((error)=>{
-      res.status(500).json(error)
-    })
+  getMainUser: async (req, res) => {
+    await User.findOne({ _id: req.params.id })
+      .then((result) => {
+        res.status(200).json(result);
+      })
+      .catch((error) => {
+        res.status(500).json(error);
+      });
   },
 
   getFriends: async (req, res) => {
     try {
       const user = await User.findById(req.params.userId);
       const friends = await Promise.all(
-        user.followings.map(async(friendId) => {
-          const friend = await User.findById(friendId.userId)
-          if(friend?._doc?.profilePicture){
+        user.followings.map(async (friendId) => {
+          const friend = await User.findById(friendId.userId);
+          if (friend?._doc?.profilePicture) {
             const downloadParams = {
-            Bucket: s3_bucket_name,
-            Key: friend?.profilePicture,
-            }
-          const command = new GetObjectCommand(downloadParams);
-          const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
-          friend._doc.url = url;}
+              Bucket: s3_bucket_name,
+              Key: friend?.profilePicture,
+            };
+            const command = new GetObjectCommand(downloadParams);
+            const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
+            friend._doc.url = url;
+          }
           return friend;
         })
       );
@@ -582,7 +595,6 @@ module.exports = {
       friends.map((friend) => {
         friendList.push(friend);
       });
-      console.log(friendList)
       res.status(200).json(friendList);
     } catch (error) {
       res.status(500).json(error);
@@ -595,8 +607,21 @@ module.exports = {
         const currentuser = await User.findByIdAndUpdate(req.body.userId);
         const otheruser = await User.findByIdAndUpdate(req.params.id);
         if (!currentuser.followings.includes(req.params.id)) {
-          await currentuser.updateOne({ $push: { followings: { userId : req.params.id} } });
-          await otheruser.updateOne({ $push: { followers: {userId : req.body.userId} } });
+          await currentuser.updateOne({
+            $push: { followings: { userId: req.params.id } },
+          });
+          await otheruser.updateOne({
+            $push: { followers: { userId: req.body.userId } },
+          });
+
+          await User.findById(req.params.id).then(async (result) => {
+            const newNotifications = new notifications({
+              text: `${currentuser.username} is following you`,
+              userId: result._id,
+              status: "Unread",
+            });
+            const savedNotifications = await newNotifications.save();
+          });
 
           res.status(200).json("its success");
         } else {
@@ -615,12 +640,17 @@ module.exports = {
       try {
         const currentuser = await User.findByIdAndUpdate(req.body.userId);
         const otheruser = await User.findByIdAndUpdate(req.params.id);
-        
-        console.log(currentuser._doc.followings[0].userId)
-        console.log(currentuser.followings.some(following => following.userId === req.params.id))
-        if (currentuser.followings.some(following => following.userId === req.params.id)) {
-          await currentuser.updateOne({ $pull: { followings: {userId : req.params.id} } });
-          await otheruser.updateOne({ $pull: { followers: {userId : req.body.userId} } });
+        if (
+          currentuser.followings.some(
+            (following) => following.userId === req.params.id
+          )
+        ) {
+          await currentuser.updateOne({
+            $pull: { followings: { userId: req.params.id } },
+          });
+          await otheruser.updateOne({
+            $pull: { followers: { userId: req.body.userId } },
+          });
           res.status(200).json("its success");
         } else {
           res.status(403).json("to be followed");
@@ -647,14 +677,24 @@ module.exports = {
 
   getAConversation: async (req, res) => {
     try {
-      console.log("its here")
-      console.log(req.params)
       const conversation = await Conversation.find({
         members: {
           $in: [req.params.userId],
         },
       });
-      console.log(conversation)
+      res.status(200).json(conversation);
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
+
+  createConversation: async (req, res) => {
+    try {
+      const conversation = await Conversation.findOne({
+        members: {
+          $all: [req.params.firstUserId, req.params.secondUserId],
+        },
+      });
       res.status(200).json(conversation);
     } catch (error) {
       res.status(500).json(error);
@@ -662,8 +702,30 @@ module.exports = {
   },
 
   newMessage: async (req, res) => {
-    const newMessage = new Message(req.body);
     try {
+      console.log(req.body.message)
+      const newMessage = new Message(req.body.message);
+      const checkConversation = await Conversation.findById(
+        req.body.message.conversationId
+      );
+      const userIds = req.body.onlineUsers.map((user) => user.userId);
+      const isPresent = userIds.some((userId) =>
+        checkConversation.members.includes(userId)
+      );
+      const otherUserId = checkConversation.members.filter((user)=> user !== req.body.message.sender)
+      console.log(otherUserId);
+      if(!isPresent){
+        console.log("first")
+        const currentUser = await User.findById(req.body.message.sender)
+        await User.findById(otherUserId[0]).then(async (result) => {
+          const newNotifications = new notifications({
+            text: `${currentUser.username} send a message to you`,
+            userId: otherUserId[0],
+            status: "Unread",
+          });
+          const savedNotifications = await newNotifications.save();
+        });
+      }
       const savedMessage = await newMessage.save();
       res.status(200).json(savedMessage);
     } catch (error) {
@@ -684,15 +746,16 @@ module.exports = {
 
   profileEdit: async (req, res) => {
     try {
-      const { username, email, password, desc } = req.body;
-      await User.findOneAndUpdate(req.body.userId, {
+      const { username, email, password, bio } = req.body;
+      const salt = await bcrypt.genSalt(10);
+      let hashedPassword = await bcrypt.hash(password, salt);
+      const result = await User.findByIdAndUpdate(req.body.userId, {
         username: username,
-        password: password,
-        desc: desc,
-      }).then((result) => {
-        console.log(result);
-        res.status(200).json(result.data);
+        email: email,
+        password: hashedPassword,
+        desc: bio,
       });
+      res.status(200).json(result);
     } catch (error) {
       res.status(500).json(error);
     }
@@ -764,14 +827,39 @@ module.exports = {
         Bucket: s3_bucket_name,
         Key: user?.profilePicture,
       };
-      if(user._doc.profilePicture != undefined){
+      if (user._doc.profilePicture != undefined) {
         const command = new GetObjectCommand(downloadParams);
         const url = await getSignedUrl(s3, command, { expiresIn: 600000 });
         user._doc.url = url;
       }
-      res.status(200).json(user)
+      res.status(200).json(user);
     } catch (error) {
-      res.status(500).json(error)
+      res.status(500).json(error);
+    }
+  },
+
+  getNotifications: async (req, res) => {
+    try {
+      const userNotifications = await notifications
+        .find({ userId: req.params.userId })
+        .sort({ _id: -1 });
+      console.log(userNotifications);
+      res.status(200).json(userNotifications);
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
+
+  markNotification: async (req, res) => {
+    try {
+      const userNotifications = await notifications.findByIdAndUpdate(
+        req.params.notificationId,
+        { $set: { status: "Read" } }
+      );
+      console.log(userNotifications);
+      res.status(200).json(userNotifications);
+    } catch (error) {
+      res.status(500).json(error);
     }
   },
 };

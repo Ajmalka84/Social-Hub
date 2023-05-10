@@ -60,3 +60,10 @@ align-self: center;
 color: gray;
 font-size: 12px;
 }
+
+.deleteComment{
+  cursor: pointer;
+  color: red;
+  align-self: center;
+  font-size: 14px;
+}

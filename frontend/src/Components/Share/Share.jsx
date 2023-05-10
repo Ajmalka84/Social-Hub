@@ -7,6 +7,7 @@ import RoomIcon from "@mui/icons-material/Room";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import AxiosWithAuth from "../../Axios/Axios";
 import jwtDecode from "jwt-decode";
+import { Toaster, toast } from "react-hot-toast";
 
 function Share({profilePicture, setPosts}) {
   const { Auth } = useContext(AuthContext);
@@ -39,6 +40,7 @@ function Share({profilePicture, setPosts}) {
           console.log(result);
         })
         .catch((error) => {
+        toast.error('Only Image file formats allowed')
         console.log(error);
       });
   };
@@ -101,6 +103,7 @@ function Share({profilePicture, setPosts}) {
           <button className="shareButton" type="submit">
             Share
           </button>
+          <Toaster position="bottom-center" reverseOrder={false} />
         </div>
       </form>
     </div>

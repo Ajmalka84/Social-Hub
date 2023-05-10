@@ -62,9 +62,9 @@ function Post({ profilePicture, post, setPosts }) {
             {post?.userDetails?.profilePicture ? <img src={post?.userDetails?.url2 } alt="shareImg" className="postProfileImg" /> : <img src="/assets/NoPhoto.jpg" alt="shareImg" className="postProfileImg" />}
             
             <span className="postUsername">
-              {post?.userDetails?.username ? post.userDetails.username : "some error"}
+              {post?.userDetails?.username ? post?.userDetails?.username : "some error"}
             </span>
-            <span className="postDate">{format(post.createdAt)}</span>
+            <span className="postDate">{format(post?.createdAt)}</span>
           </div>
           <div className="postTopRight">
             <MoreVert onClick={Option} />
@@ -103,7 +103,7 @@ function Post({ profilePicture, post, setPosts }) {
           </div>
           <div className="postBottomRight">
             <span className="postCommentText" onClick={comments}>
-              {post.comments.length > 0 ? post.comments.length : "No"} Comment
+              {post?.comments?.length > 0 ? post?.comments?.length : "No"} Comment
             </span>
           </div>
         </div>

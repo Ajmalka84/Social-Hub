@@ -9,6 +9,7 @@ const {
   getaPost,
   timeline,
   reportPost,
+  deletePostComment,
 } = require("../Controllers/UserControllers");
 const { verify } = require("../middlewares/middleware");
 const multer = require("multer");
@@ -29,17 +30,20 @@ const upload = multer({ storage: storage, fileFilter: fileFilter });
 //create a post
 router.post("/create", verify, upload.single("img"), createPost);
 
+//update a post
+router.post("/update", verify, updatePost);
+
 // get all the posts
 router.get("/all-posts", verify, allPosts);
-
-//update a post
-router.put("/:id/update", verify, updatePost);
 
 //report a post
 router.put("/:id/report", verify, reportPost);
 
 //delete a post
 router.delete("/:id/delete", verify, deletePost);
+
+//delete a postComment
+router.delete("/:id/delete-comment", verify, deletePostComment);
 
 //like a post
 router.put("/:id/like", verify, likePost);

@@ -1,41 +1,4 @@
-/* .options{
-    flex: 3;
-    z-index: 999;
-    position: sticky;
-    top: 50px;
-}
 
-.optionsWrapper{
-    padding : 20px;
-}
-
-.optionsList{
-    padding: 0;
-    margin: 0;
-    list-style: none;
-}
-
-.optionsListItem{
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-}
-
-.optionsIcon{
-    margin-right: 15px;
-}
-
-.optionsButton{
-    width: 150px;
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
-    font-weight: 500;
-}
-
-.optionsListItemText{
-    color: red;
-} */
 .post {
     position: relative;
     z-index: 1;

@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import './userList.css';
 import AxiosAdminJwt from '../../Axios/AxiosAdmin';
+import { AuthContext } from '../../context/AuthContext';
 
 const UserList = () => {
   const [users, setUsers] = useState();
-  
+  const {AdminAuth} = useContext(AuthContext)
   const AxiosAdmin = AxiosAdminJwt()
   useEffect(()=>{
     const loadUsers = async()=>{
      await AxiosAdmin.get("users").then((result)=>{
-      console.log(result.data)
       setUsers(result.data)
      }).catch((error)=>{
       console.log(error)

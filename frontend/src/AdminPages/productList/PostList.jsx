@@ -1,56 +1,157 @@
-import React, { useContext, useEffect, useState } from 'react';
-import './PostList.css';
-import AxiosAdminJwt from '../../Axios/AxiosAdmin';
+import React, { useContext, useEffect, useState } from "react";
+import "./PostList.css";
+import AxiosAdminJwt from "../../Axios/AxiosAdmin";
+import "react-responsive-modal/styles.css";
+import { Modal } from "react-responsive-modal";
+import {format} from "timeago.js"
 const PostList = () => {
   const [posts, setPosts] = useState();
-  const AxiosAdmin = AxiosAdminJwt()
-  useEffect(()=>{
-   const getPosts = async()=>{
-     await AxiosAdmin.get('reportedPosts').then((result)=>{
-       console.log(result.data)
-       setPosts(result.data)
-     }).catch((error)=>{
-      console.log(error)
-     })
-   }
-   getPosts()
-  },[])
+  const AxiosAdmin = AxiosAdminJwt();
+  const [open, setOpen] = useState(null);
+  useEffect(() => {
+    const getPosts = async () => {
+      await AxiosAdmin.get("reportedPosts")
+        .then((result) => {
+          console.log(result.data);
+          setPosts(result.data);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    };
+    getPosts();
+  }, []);
 
-  const handleBlockPost = (postId) => {
+  const handleBlockPost = async(postId) => {
     const updatedPosts = posts.map((post) =>
-      post._id === postId ? { ...post, blocked: !post.blocked } : post
+    post._id === postId ? { ...post, blocked: !post.blocked } : post
     );
-    setPosts(updatedPosts);
+    await AxiosAdmin.post("block-Post", {postId : postId}).then((result)=>{
+      console.log(result.data)
+      setPosts(updatedPosts);  
+    }).catch((error)=>{
+      console.log(error)
+    })
   };
 
+  
+  const viewPost = (event , postId) => {
+    event.stopPropagation();
+    setOpen(postId);
+  };
+  
+  const onCloseModal = () => {
+    setOpen(false);
+  };
   return (
     <div className="userList">
-    <table>
-      <thead>
-        <tr>
-          <th>UserId</th>
-          <th>Post Id</th>
-          <th>No of reports</th>
-          <th>Blocked</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {posts?.map((post) => (
-          <tr key={post._id}>
-            <td>{post.userId}</td>
-            <td>{post._id}</td>
-            <td>{post.reports.length}</td>
-            <td>{post.blocked ? 'Yes' : 'No'}</td>
-            <td>
-              <button onClick={() => handleBlockPost(post._id)}>
-                {post.blocked ? 'Unblock' : 'Block'}
-              </button>
-            </td>
+      <table>
+        <thead>
+          <tr>
+            <th>UserId</th>
+            <th>Post Id</th>
+            <th>No of reports</th>
+            <th>Blocked</th>
+            <th>View Post</th>
+
+            <th>Actions</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {posts?.map((post) => (
+            <tr key={post._id}>
+              <td>{post.userId}</td>
+              <td>{post._id}</td>
+              <td>{post.reports.length}</td>
+              <td>{post.blocked ? "Yes" : "No"}</td>
+              <td>
+                <button onClick={(event) => viewPost(event,post._id)}>view post</button>
+              </td>
+
+              <td>
+                <button onClick={() => handleBlockPost( post._id)}>
+                  {post.blocked ? "Unblock" : "Block"}
+                </button>
+                <Modal open={open === post._id} onClose={onCloseModal } center>
+                  <div className="post" style={{minWidth : "500px" , minHeight : '150px'}}>
+                    <div className="postWrapper">
+                      <div className="postTop">
+                        <div className="postTopLeft">
+                          {post?.userDetails?.profilePicture ? (
+                            <img
+                              src={post?.userDetails?.url2}
+                              alt="shareImg"
+                              className="postProfileImg"
+                            />
+                          ) : (
+                            <img
+                              src="/assets/NoPhoto.jpg"
+                              alt="shareImg"
+                              className="postProfileImg"
+                            />
+                          )}
+
+                          <span className="postUsername">
+                            {post?.userDetails?.username
+                              ? post?.userDetails?.username
+                              : "some error"}
+                          </span>
+                          <span className="postDate">
+                            {format(post?.createdAt)}
+                          </span>
+                        </div>
+                        <div className="postTopRight">
+                          
+                        </div>
+                      </div>
+                      <div className="postCenter">
+                        <span className="postText">
+                          {post?.desc ? post.desc : "No description available"}
+                        </span>
+                        {post.url ? (
+                          <img
+                            src={post?.url ? post.url : ""}
+                            alt="postImg"
+                            className="postImg"
+                          />
+                        ) : (
+                          ""
+                        )}
+                      </div>
+                      <div className="postBottom">
+                        <div className="postBottomLeft">
+                          <img
+                            src="/assets/like.png"
+                            alt="like"
+                            className="likeIcon"
+                          />
+                          <img
+                            src="/assets/heart.png"
+                            alt="heart"
+                            className="likeIcon"
+                            
+                          />
+                          <span className="postLikeCounter">
+                            {post.likes.length} people like it
+                          </span>
+                        </div>
+                        <div className="postBottomRight">
+                          <span className="postCommentText" >
+                            {post?.comments?.length > 0
+                              ? post?.comments?.length
+                              : "No"}{" "}
+                            Comment
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Modal>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -58,75 +159,3 @@ const PostList = () => {
 export default PostList;
 
 
-// import "./productList.css";
-// import { DataGrid } from "@material-ui/data-grid";
-// import { DeleteOutline } from "@material-ui/icons";
-// import { productRows } from "../../dummyData";
-// import { Link } from "react-router-dom";
-// import { useState } from "react";
-
-// export default function ProductList() {
-//   const [data, setData] = useState(productRows);
-
-//   const handleDelete = (id) => {
-//     setData(data.filter((item) => item.id !== id));
-//   };
-
-//   const columns = [
-//     { field: "id", headerName: "ID", width: 90 },
-//     {
-//       field: "product",
-//       headerName: "Product",
-//       width: 200,
-//       renderCell: (params) => {
-//         return (
-//           <div className="productListItem">
-//             <img className="productListImg" src={params.row.img} alt="" />
-//             {params.row.name}
-//           </div>
-//         );
-//       },
-//     },
-//     { field: "stock", headerName: "Stock", width: 200 },
-//     {
-//       field: "status",
-//       headerName: "Status",
-//       width: 120,
-//     },
-//     {
-//       field: "price",
-//       headerName: "Price",
-//       width: 160,
-//     },
-//     {
-//       field: "action",
-//       headerName: "Action",
-//       width: 150,
-//       renderCell: (params) => {
-//         return (
-//           <>
-//             <Link to={"/product/" + params.row.id}>
-//               <button className="productListEdit">Edit</button>
-//             </Link>
-//             <DeleteOutline
-//               className="productListDelete"
-//               onClick={() => handleDelete(params.row.id)}
-//             />
-//           </>
-//         );
-//       },
-//     },
-//   ];
-
-//   return (
-//     <div className="productList">
-//       <DataGrid
-//         rows={data}
-//         disableSelectionOnClick
-//         columns={columns}
-//         pageSize={8}
-//         checkboxSelection
-//       />
-//     </div>
-//   );
-// }

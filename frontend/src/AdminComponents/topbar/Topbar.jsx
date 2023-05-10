@@ -8,8 +8,8 @@ export default function AdminTopbar() {
   const navigate = useNavigate()
   const {AdminAuth , setAdminAuth} = useContext(AuthContext)
   const AdminLogout = async()=>{
-     setAdminAuth(null)
-     navigate('/admin/login')
+     setAdminAuth({})
+     navigate('/admin/login', {replace : true})
   }
   return (
     <div className="adminTopbar">
