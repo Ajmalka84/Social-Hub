@@ -7,6 +7,7 @@ import ChatOnline from "../../Components/ChatOnline/ChatOnline";
 import { AuthContext } from "../../context/AuthContext";
 import AxiosWithAuth from "../../Axios/Axios";
 import jwtDecode from "jwt-decode";
+import { Toaster, toast } from "react-hot-toast";
 import { io } from "socket.io-client";
 function Messenger() {
   const { Auth,DP, setDP, conversations, setConversations, currentChat, setCurrentChat } =
@@ -95,28 +96,34 @@ function Messenger() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const message = {
-      sender: decodedAuth._id,
-      text: newMessages,
-      conversationId: currentChat._id,
-    };
-    const usersOnline = onlineUsers  
-    console.log(onlineUsers)
-    let recieverId = currentChat.members.find(
-      (member) => member !== decodedAuth._id
-    );
-    socket.current.emit(
-      "sendMessage",
-      { senderId: decodedAuth._id },
-      { recieverId: recieverId },
-      { text: newMessages }
-    );
-    try {
-      const res = await axiosJWT.post("messages", {message : message , onlineUsers : usersOnline});
-      setMessages([...messages, res.data]);
-      setNewMessages("");
-    } catch (error) {
-      console.log(error);
+    let string = newMessages;
+    let regex = /^\s*([^\s].*?[^\s])\s*$/;
+    if (regex.test(string)) {
+      const message = {
+        sender: decodedAuth._id,
+        text: newMessages,
+        conversationId: currentChat._id,
+      };
+      const usersOnline = onlineUsers  
+      console.log(onlineUsers)
+      let recieverId = currentChat.members.find(
+        (member) => member !== decodedAuth._id
+      );
+      socket.current.emit(
+        "sendMessage",
+        { senderId: decodedAuth._id },
+        { recieverId: recieverId },
+        { text: newMessages }
+      );
+      try {
+        const res = await axiosJWT.post("messages", {message : message , onlineUsers : usersOnline});
+        setMessages([...messages, res.data]);
+        setNewMessages("");
+      } catch (error) {
+        console.log(error);
+      }
+    }else{
+      toast.error("Comment is empty");
     }
   };
 
@@ -189,6 +196,7 @@ function Messenger() {
             ) : <p>No online Friends</p>}
           </div>
         </div>
+        <Toaster position="bottom-center" reverseOrder={false} />
       </div>
     </>
   );

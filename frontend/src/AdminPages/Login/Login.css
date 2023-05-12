@@ -9,6 +9,7 @@
   .adminForm {
     width: 400px;
     padding: 40px;
+    /* padding-right: 60px; */
     background-color: #fff;
     border-radius: 10px;
     box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.2);
@@ -31,18 +32,18 @@
     font-weight: bold;
   }
   
-  input[type='email'],
-  input[type='password'] {
+  .inputEmail,
+  .inputPassword {
     display: block;
-    width: 100%;
+    width: 95%;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 1rem;
   }
   
-  input[type='email']:focus,
-  input[type='password']:focus {
+  .inputEmail:focus,
+  .inputPassword:focus {
     outline: none;
     border-color: #4b9bd1;
   }

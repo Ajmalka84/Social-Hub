@@ -39,9 +39,9 @@ const s3 = new S3Client({
 });
 
 module.exports = {
-  register: async (req, res) => {
+  register : async (req, res) => {
     let { username, email, mobile, password, otp } = req.body;
-    await client.verify._v2
+    await client.verify
       .services(serviceID)
       .verificationChecks.create({
         to: `+91${mobile}`,
@@ -95,6 +95,7 @@ module.exports = {
       const payload = user._doc;
       const accessToken = createAccessToken(payload);
       const refreshToken = createRefreshToken(payload);
+      console.log(refreshToken)
       refreshTokens.push(refreshToken);
       res.cookie("refreshToken", refreshToken, {
         // httpOnly: true,
@@ -133,7 +134,7 @@ module.exports = {
       let { mobile } = req.body;
       let findUser = await User.findOne({ mobile: mobile });
       if (findUser) {
-        await client.verify.v2.services(serviceID).verifications.create({
+        await client.verify.services(serviceID).verifications.create({
           to: `+91${mobile}`,
           channel: "sms",
         });
@@ -530,6 +531,19 @@ module.exports = {
         username: new RegExp(`${req.body.query}`, "i"),
       }).limit(5);
       res.status(200).json(searchResult);
+    } catch (error) {
+      res.status(500).json(error.message);
+    }
+  },
+  
+  checkIfBlocked: async (req, res) => {
+    try {
+      const checkBlock = await User.findById(req.params.id)
+      if(checkBlock.Blocked === true){
+        res.status(200).json({Blocked : true});
+      }else{
+        res.status(200).json({Blocked : false});
+      }
     } catch (error) {
       res.status(500).json(error.message);
     }

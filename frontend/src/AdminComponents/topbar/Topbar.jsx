@@ -9,6 +9,7 @@ export default function AdminTopbar() {
   const {AdminAuth , setAdminAuth} = useContext(AuthContext)
   const AdminLogout = async()=>{
      setAdminAuth({})
+     localStorage.removeItem('AdminAccessToken')
      navigate('/admin/login', {replace : true})
   }
   return (

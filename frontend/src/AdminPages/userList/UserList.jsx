@@ -2,22 +2,30 @@ import React, { useContext, useEffect, useState } from 'react';
 import './userList.css';
 import AxiosAdminJwt from '../../Axios/AxiosAdmin';
 import { AuthContext } from '../../context/AuthContext';
+import Pagination from '../../AdminComponents/Pagination/Pagination';
 
 const UserList = () => {
   const [users, setUsers] = useState();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [postsPerPage, setPostsPerPage] = useState(8);
+  const lastPostIndex = currentPage * postsPerPage
+  const firstPostIndex = lastPostIndex - postsPerPage
+  console.log(users, lastPostIndex, firstPostIndex)
   const {AdminAuth} = useContext(AuthContext)
   const AxiosAdmin = AxiosAdminJwt()
   useEffect(()=>{
     const loadUsers = async()=>{
-     await AxiosAdmin.get("users").then((result)=>{
-      setUsers(result.data)
-     }).catch((error)=>{
-      console.log(error)
-     })
+      await AxiosAdmin.get("users").then((result)=>{
+        setUsers(result.data)
+      }).catch((error)=>{
+        console.log(error)
+      })
     }
     loadUsers()
   },[])
-
+  
+  const currentPosts = users?.slice(firstPostIndex, lastPostIndex)
+  console.log(currentPosts)
   const handleBlockUser = async(userId) => {
     const updatedUsers = users.map((user) =>
       user._id === userId ? { ...user, blocked: !user.blocked } : user
@@ -43,7 +51,7 @@ const UserList = () => {
         </tr>
       </thead>
       <tbody>
-        {users?.map((user) => (
+        {currentPosts?.map((user) => (
           <tr key={user._id}>
             <td>{user.username}</td>
             <td>{user.email}</td>
@@ -58,6 +66,8 @@ const UserList = () => {
         ))}
       </tbody>
     </table>
+    
+    <Pagination totalPosts={users?.length} postsPerPage={postsPerPage} setCurrentPage={setCurrentPage} currentPage={currentPage}/>
     </div>
   );
 };

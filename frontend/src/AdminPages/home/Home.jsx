@@ -12,7 +12,9 @@ export default function AdminHome() {
   const axiosAdmin = AxiosAdminJwt()
   const {AdminAuth} = useContext(AuthContext)
   const [dashBoard, setDashBoard] = useState()
-  localStorage.setItem('AdminAccessToken' , AdminAuth.adminToken)
+  
+  const token = localStorage.getItem('AdminAccessToken');
+  console.log(token)
   useEffect(()=>{
     const Data = async () =>{
        const result = await axiosAdmin.get('all-details')

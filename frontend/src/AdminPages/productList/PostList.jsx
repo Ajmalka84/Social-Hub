@@ -4,10 +4,16 @@ import AxiosAdminJwt from "../../Axios/AxiosAdmin";
 import "react-responsive-modal/styles.css";
 import { Modal } from "react-responsive-modal";
 import {format} from "timeago.js"
+import Pagination from "../../AdminComponents/Pagination/Pagination";
 const PostList = () => {
   const [posts, setPosts] = useState();
   const AxiosAdmin = AxiosAdminJwt();
   const [open, setOpen] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const [postsPerPage, setPostsPerPage] = useState(3);
+  const lastPostIndex = currentPage * postsPerPage
+  const firstPostIndex = lastPostIndex - postsPerPage
   useEffect(() => {
     const getPosts = async () => {
       await AxiosAdmin.get("reportedPosts")
@@ -21,7 +27,7 @@ const PostList = () => {
     };
     getPosts();
   }, []);
-
+  
   const handleBlockPost = async(postId) => {
     const updatedPosts = posts.map((post) =>
     post._id === postId ? { ...post, blocked: !post.blocked } : post
@@ -34,7 +40,8 @@ const PostList = () => {
     })
   };
 
-  
+  const currentPosts = posts?.slice(firstPostIndex, lastPostIndex)
+  console.log(currentPosts)
   const viewPost = (event , postId) => {
     event.stopPropagation();
     setOpen(postId);
@@ -47,8 +54,8 @@ const PostList = () => {
     <div className="userList">
       <table>
         <thead>
-          <tr>
-            <th>UserId</th>
+          <tr >
+            <th>Username</th>
             <th>Post Id</th>
             <th>No of reports</th>
             <th>Blocked</th>
@@ -58,9 +65,9 @@ const PostList = () => {
           </tr>
         </thead>
         <tbody>
-          {posts?.map((post) => (
+          {currentPosts?.map((post) => (
             <tr key={post._id}>
-              <td>{post.userId}</td>
+              <td>{post.userDetails.username}</td>
               <td>{post._id}</td>
               <td>{post.reports.length}</td>
               <td>{post.blocked ? "Yes" : "No"}</td>
@@ -152,6 +159,7 @@ const PostList = () => {
           ))}
         </tbody>
       </table>
+      <Pagination totalPosts={posts?.length} postsPerPage={postsPerPage} setCurrentPage={setCurrentPage} currentPage={currentPage}/>
     </div>
   );
 };

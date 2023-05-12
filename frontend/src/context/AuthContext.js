@@ -23,7 +23,6 @@ export const AuthContextProvider = ({ children }) => {
 
   // useEffect(() => {
   //   const token = localStorage.getItem('AdminAccessToken');
-
   //   console.log(token)
   //   console.log("first")
   //   if (token !== undefined || token !== null) {

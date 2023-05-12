@@ -1,10 +1,5 @@
 import React, { useContext } from "react";
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Outlet,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import Home from "./Pages/Home/Home";
 import Profile from "./Pages/Profile/Profile";
 import Login from "./Pages/Login/Login";
@@ -19,6 +14,8 @@ import AdminSidebar from "./AdminComponents/sidebar/Sidebar";
 import "./App.css";
 import UserList from "./AdminPages/userList/UserList";
 import PostList from "./AdminPages/productList/PostList";
+import PersistAdminLogin from "./PersistAdminLogin";
+
 
 function App() {
   return (
@@ -32,46 +29,48 @@ function App() {
           <Route path="profile/edit" element={<EditProfile />} />
           <Route path="messenger" element={<Messenger />} />
         </Route>
+        <Route element={<PersistAdminLogin />}>
+          <Route
+            path="admin"
+            element={
+              <>
+                <AdminTopbar />
+                <div className="containerApp">
+                  <AdminSidebar />
+                  <AdminHome />
+                </div>
+              </>
+            }
+          />
+          <Route
+            path="admin/users"
+            element={
+              <>
+                <AdminTopbar />
+                <div className="containerApp">
+                  <AdminSidebar />
+                  <UserList />
+                </div>
+              </>
+            }
+          />
+          <Route
+            path="admin/posts"
+            element={
+              <>
+                <AdminTopbar />
+                <div className="containerApp">
+                  <AdminSidebar />
+                  <PostList />
+                </div>
+              </>
+            }
+          />
+        </Route>
 
         <Route path="admin/login" element={<AdminLogin />} />
         <Route path="admin/logout" element={<AdminLogin />} />
-        <Route
-          path="admin"
-          element={
-            <>
-              <AdminTopbar />
-              <div className="containerApp">
-                <AdminSidebar />
-                <AdminHome />
-              </div>
-            </>
-          }
-        />
-        <Route
-          path="admin/users"
-          element={
-            <>
-              <AdminTopbar />
-              <div className="containerApp">
-                <AdminSidebar />
-                <UserList />
-              </div>
-            </>
-          }
-        />
-        <Route
-          path="admin/posts"
-          element={
-            <>
-              <AdminTopbar />
-              <div className="containerApp">
-                <AdminSidebar />
-                <PostList />
-              </div>
-            </>
-          }
-        />
-
+        {/* <Route path="admin/logout" element={<AdminLogin />} /> */}
       </Routes>
     </BrowserRouter>
   );

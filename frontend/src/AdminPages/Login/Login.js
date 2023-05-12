@@ -30,12 +30,13 @@ const AdminLogin = () => {
     try {
       const res = await axios.post("http://localhost:8000/admin/login", {email : email , password : password})
       setAdminAuth(prev => ({...prev,...res.data}));
+      localStorage.setItem('AdminAccessToken' , res.data.adminToken)
       navigate('/admin' , {replace : true})
     } catch (error) {
       console.log(error)
     }
   };
-
+  
   return (
     <div className="login-container">
       <form className='adminForm' onSubmit={handleSubmit}>
@@ -46,6 +47,7 @@ const AdminLogin = () => {
             type="email"
             name="email"
             id="email"
+            className='inputEmail'
             placeholder="Enter email"
             value={email}
             onChange={handleInputChange}
@@ -61,6 +63,7 @@ const AdminLogin = () => {
             type="password"
             name="password"
             id="password"
+            className='inputPassword'
             placeholder="Password"
             value={password}
             onChange={handleInputChange}

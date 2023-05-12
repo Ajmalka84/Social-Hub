@@ -15,6 +15,7 @@ const {
   getMainUser,
   getNotifications,
   markNotification,
+  checkIfBlocked,
 } = require("../Controllers/UserControllers");
 const multer = require("multer");
 const storage = multer.memoryStorage();
@@ -32,6 +33,9 @@ router.post("/search", verify, searchUser);
 
 //get user
 router.get("/:id", verify, getaUser);
+
+//get user
+router.get("/check/:id", checkIfBlocked);
 
 //get main user for rightbar profile
 router.get("/get-main-user/:id", verify, getMainUser);
