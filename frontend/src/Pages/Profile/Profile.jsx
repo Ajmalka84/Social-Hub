@@ -6,7 +6,7 @@ import Rightbar from "../../Components/Rightbar/Rightbar";
 import Sidebar from "../../Components/Sidebar/Sidebar";
 import Topbar from "../../Components/Topbar/Topbar";
 import { AuthContext } from "../../context/AuthContext";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import AxiosWithAuth from "../../Axios/Axios";
 import jwtDecode from "jwt-decode";
 import "react-responsive-modal/styles.css";
@@ -14,7 +14,7 @@ import { Modal } from "react-responsive-modal";
 import { Toaster, toast } from "react-hot-toast";
 
 function Profile() {
-  const { Auth, DP, setDP , conversations, setConversations, currentChat, setCurrentChat } = useContext(AuthContext);
+  const { Auth, DP, setDP ,setConversations, setCurrentChat } = useContext(AuthContext);
   const navigate = useNavigate()
   const [open, setOpen] = useState(false);
   const userId = useParams();
@@ -188,56 +188,61 @@ function Profile() {
           <Toaster position="bottom-center" reverseOrder={false} />
           <Modal open={open} onClose={onCloseModal} center>
           <div className="container">
-          <form  style={{minWidth : "500px" , minHeight : "500px"}} onSubmit={editDetails}>
-          <label htmlFor="username">Username</label>
+          <form className="editProfileForm"  style={{minWidth : "500px" , minHeight : "500px"}} onSubmit={editDetails}>
+          <label className="editProfileLabel" htmlFor="username">Username</label>
           <input
             type="text"
             id="username"
             name="username"
             value={username}
             onChange={(event) => setUsername(event.target.value)}
+            className="editProfileInput"
             required
           />
 
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email" className="editProfileLabel">Email</label>
           <input
             type="email"
             id="email"
             name="email"
             value={email}
+            className="editProfileInput"
             onChange={(event) => setEmail(event.target.value)}
             required
           />
 
-          <label htmlFor="password">Password</label>
+          <label htmlFor="password" className="editProfileLabel">Password</label>
           <input
             type="password"
             id="password"
             name="password"
             value={password}
+            className="editProfileInput"
             onChange={(event) => setPassword(event.target.value)}
             required
           />
 
-          <label htmlFor="confirm_password">Confirm Password</label>
+          <label htmlFor="confirm_password" className="editProfileLabel">Confirm Password</label>
           <input
             type="password"
             id="confirm_password"
             name="confirm_password"
+            className="editProfileInput"
             value={password}
             onChange={(event) => setConfirmPassword(event.target.value)}
             required
           />
 
-          <label htmlFor="bio">Bio</label>
+          <label htmlFor="bio" className="editProfileLabel">Bio</label>
           <textarea
             id="bio"
             name="bio"
             value={bio}
+            className="editProfileTextArea"
             onChange={(event) => setBio(event.target.value)}
           ></textarea>
 
-          <input type="submit" value="Save Changes" />
+          <input type="submit" value="Save Changes" className="inputSubmit" />
         </form>
         <div>
           <input

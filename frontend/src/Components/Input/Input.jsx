@@ -1,17 +1,25 @@
 import React from "react";
 import "./Input.css";
-function Input({id, placeholder, type, register, errorMessage }) {
-  
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
+function Input({ id, placeholder, type, register, errorMessage, mobile }) {
   return (
     <div className="InputBox">
-      <input
-        id={id}
-        placeholder={placeholder}
-        type={type}
-        {...register}
-        className="loginInput"
+      {mobile ? (
+        <PhoneInput
+        country={'in'}
+        inputStyle={{width : "500px" , height : "40px"}}
       />
-      <span className="errorMessage">{errorMessage}</span>
+      ) : (
+        <input
+          id={id}
+          placeholder={placeholder}
+          type={type}
+          {...register}
+          className="loginInput"
+        />
+      )}
+      {}<span className="errorMessage">{errorMessage}</span>
     </div>
   );
 }

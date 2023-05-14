@@ -21,24 +21,6 @@ export const AuthContextProvider = ({ children }) => {
     JSON.parse(localStorage.getItem("persist")) || false
   );
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem('AdminAccessToken');
-  //   console.log(token)
-  //   console.log("first")
-  //   if (token !== undefined || token !== null) {
-  //     console.log("second")
-  //     const decodedToken = jwtDecode(token);
-  //     console.log(decodedToken)
-  //     if (decodedToken.exp * 1000 < Date.now()) {
-  //       console.log("third")
-  //       localStorage.removeItem('token');
-  //     } else {
-  //       console.log("fourth")
-  //       setAdminAuth(decodedToken);
-  //     }
-  //   }
-  // }, []);
-  
   // function googleSignIn() {
   //   const googleAuthProvider = new GoogleAuthProvider();
   //   return signInWithPopup(auth, googleAuthProvider);

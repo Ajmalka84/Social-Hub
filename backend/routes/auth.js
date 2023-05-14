@@ -6,6 +6,7 @@ const {
   sendOtp,
   resetPassword,
   refresh,
+  checkMobileandEmail,
 } = require("../Controllers/UserControllers");
 const User = require("../model/User");
 const bcrypt = require("bcrypt");
@@ -16,11 +17,11 @@ const accountSID = process.env.TWILIO_accountSID;
 const authToken = process.env.TWILIO_token;
 const client = require("twilio")(accountSID, authToken);
 
-//SEND OTP
-router.post("/sendOtp", sendOtp);
-
 // RIGISTER
 router.post("/register", register);
+
+// Check Mobile and Email
+router.post("/check-mobile", checkMobileandEmail);
 
 // FORGOT PASSWORD
 router.post("/forgot_password", forgotPassword);

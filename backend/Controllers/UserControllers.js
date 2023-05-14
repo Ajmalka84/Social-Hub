@@ -39,53 +39,52 @@ const s3 = new S3Client({
 });
 
 module.exports = {
-  register : async (req, res) => {
-    let { username, email, mobile, password, otp } = req.body;
-    await client.verify
-      .services(serviceID)
-      .verificationChecks.create({
-        to: `+91${mobile}`,
-        code: otp,
-      })
-      .then(async (data) => {
-        if (data.status === "approved") {
-          try {
-            // genSalt is for making the password complex
-            const salt = await bcrypt.genSalt(10);
-            let hashedPassword = await bcrypt.hash(password, salt);
-            const newUser = await new User({
-              username: username,
-              email: email,
-              mobile: mobile,
-              password: hashedPassword,
-              isAdmin: false,
-            });
+  register: async (req, res) => {
+    let { username, email, mobile, password } = req.body;
+    try {
+      // genSalt is for making the password complex
+      const salt = await bcrypt.genSalt(10);
+      let hashedPassword = await bcrypt.hash(password, salt);
+      const newUser = await new User({
+        username: username,
+        email: email,
+        mobile: mobile,
+        password: hashedPassword,
+        isAdmin: false,
+      });
+      // saves the newUser into the database and converts user objects into json
+      const user = await newUser.save();
+      res.status(200).json(user);
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
 
-            // saves the newUser into the database and converts user objects into json
-            const user = await newUser.save();
-            // const payload = { userId: req.body.email };
-            // const accessToken = createAccessToken(payload);
-            // const refreshToken = createRefreshToken(payload);
-            // refreshTokens.push(refreshToken);
-            res.status(200).json(user);
-          } catch (error) {
-            res.json(error);
-          }
+  checkMobileandEmail: async (req, res) => {
+    let { email, mobile } = req.body;
+    await User.findOne({
+      $or: [{ email: email }, { mobile: mobile }],
+    })
+      .then((result) => {
+        if (result == null) {
+          res.status(200).json({ status: false });
+        } else {
+          res.status(200).json({ status: true });
         }
       })
       .catch((error) => {
-        res.json("something wrong with twilio client");
+        res.status(500).json(error);
       });
   },
 
   login: async (req, res) => {
     try {
-      let user = await User.findOne({ email: req.body.email , blocked : false });
+      let user = await User.findOne({ email: req.body.email, blocked: false });
       if (!user) {
         return res.status(400).json("user not found");
       }
 
-      let validatePassword = await bcrypt.compare(
+      let validatePassword = bcrypt.compare(
         req.body.password,
         user.password
       );
@@ -95,7 +94,6 @@ module.exports = {
       const payload = user._doc;
       const accessToken = createAccessToken(payload);
       const refreshToken = createRefreshToken(payload);
-      console.log(refreshToken)
       refreshTokens.push(refreshToken);
       res.cookie("refreshToken", refreshToken, {
         // httpOnly: true,
@@ -111,37 +109,11 @@ module.exports = {
   },
 
   forgotPassword: async (req, res) => {
-    let { mobile, otp } = req.body;
-    await client.verify._v2
-      .services(serviceID)
-      .verificationChecks.create({
-        to: `+91${mobile}`,
-        code: otp,
-      })
-      .then(async (data) => {
-        if (data.status === "approved") {
-          let user = await User.findOne({ mobile: mobile });
-          res.status(200).json(user);
-        }
-      })
-      .catch((error) => {
-        res.json("something wrong with twilio client");
-      });
-  },
-
-  sendOtp: async (req, res) => {
     try {
       let { mobile } = req.body;
-      let findUser = await User.findOne({ mobile: mobile });
-      if (findUser) {
-        await client.verify.services(serviceID).verifications.create({
-          to: `+91${mobile}`,
-          channel: "sms",
-        });
-        res.status(200).json("OTP sent to mobile number");
-      } else {
-        res.status(404).json("User not found.");
-      }
+      const newMobile = mobile.slice(-10);
+      let user = await User.findOne({ mobile: newMobile });
+      res.status(200).json(user);
     } catch (error) {
       res.status(500).json(error);
     }
@@ -149,10 +121,11 @@ module.exports = {
 
   resetPassword: async (req, res) => {
     const { mobile, password } = req.body;
+    const newMobile = mobile.slice(-10);
     const salt = await bcrypt.genSalt(10);
     let hashedPassword = await bcrypt.hash(password, salt);
     await User.findOneAndUpdate(
-      { mobile: mobile },
+      { mobile: newMobile },
       { $set: { password: hashedPassword } }
     )
       .then((result) => {
@@ -165,7 +138,6 @@ module.exports = {
 
   refresh: (req, res) => {
     //take the refresh token from the user
-    // const refreshToken = req.body.refreshToken;
     const refreshToken = req.cookies.refreshToken;
     // send error if there is no token or its invalid
     if (!refreshToken) return res.status(401).json("You are not authenticated");
@@ -244,7 +216,7 @@ module.exports = {
 
   allPosts: async (req, res) => {
     try {
-      const posts = await post.find({blocked : false}).sort({ createdAt: -1 });
+      const posts = await post.find({ blocked: false }).sort({ createdAt: -1 });
       for (const post of posts) {
         post._doc.userDetails = await User.findOne({ _id: post._doc.userId });
         const comments = post._doc.comments;
@@ -298,10 +270,10 @@ module.exports = {
 
   reportPost: async (req, res) => {
     try {
-      const checkReportPost =  await post.findById(req.params.id)
-      if(checkReportPost.reports.includes(req.body.reportedUser)){
-        res.status(200).json({message : "Cannot Report Twice"})
-      }else{
+      const checkReportPost = await post.findById(req.params.id);
+      if (checkReportPost.reports.includes(req.body.reportedUser)) {
+        res.status(200).json({ message: "Cannot Report Twice" });
+      } else {
         const reportPost = await post.findByIdAndUpdate(req.params.id, {
           $push: { reports: req.body.reportedUser },
         });
@@ -431,7 +403,9 @@ module.exports = {
     //the route should include something other than timeline because as /:id has already been given this timeline will go to that root. instead of avoiding that we should give something other than that.
     try {
       const currentUser = await User.findById(req.params.userId);
-      const currentUserPosts = await post.find({ userId: req.params.userId , blocked : false}).sort({_id : -1});
+      const currentUserPosts = await post
+        .find({ userId: req.params.userId, blocked: false })
+        .sort({ _id: -1 });
       for (const currentUserPost of currentUserPosts) {
         currentUserPost._doc.userDetails = await User.findOne({
           _id: currentUserPost._doc.userId,
@@ -535,14 +509,14 @@ module.exports = {
       res.status(500).json(error.message);
     }
   },
-  
+
   checkIfBlocked: async (req, res) => {
     try {
-      const checkBlock = await User.findById(req.params.id)
-      if(checkBlock.Blocked === true){
-        res.status(200).json({Blocked : true});
-      }else{
-        res.status(200).json({Blocked : false});
+      const checkBlock = await User.findById(req.params.id);
+      if (checkBlock.Blocked === true) {
+        res.status(200).json({ Blocked: true });
+      } else {
+        res.status(200).json({ Blocked: false });
       }
     } catch (error) {
       res.status(500).json(error.message);
@@ -717,7 +691,6 @@ module.exports = {
 
   newMessage: async (req, res) => {
     try {
-      console.log(req.body.message)
       const newMessage = new Message(req.body.message);
       const checkConversation = await Conversation.findById(
         req.body.message.conversationId
@@ -726,11 +699,11 @@ module.exports = {
       const isPresent = userIds.some((userId) =>
         checkConversation.members.includes(userId)
       );
-      const otherUserId = checkConversation.members.filter((user)=> user !== req.body.message.sender)
-      console.log(otherUserId);
-      if(!isPresent){
-        console.log("first")
-        const currentUser = await User.findById(req.body.message.sender)
+      const otherUserId = checkConversation.members.filter(
+        (user) => user !== req.body.message.sender
+      );
+      if (!isPresent) {
+        const currentUser = await User.findById(req.body.message.sender);
         await User.findById(otherUserId[0]).then(async (result) => {
           const newNotifications = new notifications({
             text: `${currentUser.username} send a message to you`,
@@ -836,7 +809,6 @@ module.exports = {
   getProfilePic: async (req, res) => {
     try {
       const user = await User.findOne({ _id: req.body.userId });
-      console.log(user.profilePicture);
       const downloadParams = {
         Bucket: s3_bucket_name,
         Key: user?.profilePicture,
@@ -857,7 +829,6 @@ module.exports = {
       const userNotifications = await notifications
         .find({ userId: req.params.userId })
         .sort({ _id: -1 });
-      console.log(userNotifications);
       res.status(200).json(userNotifications);
     } catch (error) {
       res.status(500).json(error);
@@ -870,7 +841,6 @@ module.exports = {
         req.params.notificationId,
         { $set: { status: "Read" } }
       );
-      console.log(userNotifications);
       res.status(200).json(userNotifications);
     } catch (error) {
       res.status(500).json(error);

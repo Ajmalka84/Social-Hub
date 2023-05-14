@@ -72,11 +72,11 @@ const PostList = () => {
               <td>{post.reports.length}</td>
               <td>{post.blocked ? "Yes" : "No"}</td>
               <td>
-                <button onClick={(event) => viewPost(event,post._id)}>view post</button>
+                <button className="tableButton" onClick={(event) => viewPost(event,post._id)}>view post</button>
               </td>
 
               <td>
-                <button onClick={() => handleBlockPost( post._id)}>
+                <button className="tableButton" onClick={() => handleBlockPost( post._id)}>
                   {post.blocked ? "Unblock" : "Block"}
                 </button>
                 <Modal open={open === post._id} onClose={onCloseModal } center>

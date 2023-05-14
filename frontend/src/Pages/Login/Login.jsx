@@ -79,9 +79,11 @@ function Login() {
         </div>
         <div className="loginRight">
           {verify ? (
-            <Mobile />
+            <Mobile setVerify={setVerify} />
           ) : (
+            
             <form onSubmit={handleSubmit(formSubmit)} className="loginBox">
+              
               <Input
                 id="email"
                 placeholder="Email"

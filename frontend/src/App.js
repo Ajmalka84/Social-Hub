@@ -5,7 +5,6 @@ import Profile from "./Pages/Profile/Profile";
 import Login from "./Pages/Login/Login";
 import Register from "./Pages/Register/Register";
 import Messenger from "./Pages/Messenger/Messenger";
-import EditProfile from "./Components/EditProfile/EditProfile";
 import PersistLogin from "./PersistLogin";
 import AdminLogin from "./AdminPages/Login/Login";
 import AdminHome from "./AdminPages/home/Home";
@@ -26,7 +25,6 @@ function App() {
         <Route element={<PersistLogin />}>
           <Route path="/" element={<Home />} />
           <Route path="profile/:_id" element={<Profile />} />
-          <Route path="profile/edit" element={<EditProfile />} />
           <Route path="messenger" element={<Messenger />} />
         </Route>
         <Route element={<PersistAdminLogin />}>

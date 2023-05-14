@@ -1,5 +1,4 @@
 import React  from "react";
-import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Input from "../../Components/Input/Input";
@@ -14,10 +13,9 @@ const schema = yup.object({
     .oneOf([yup.ref("password")], "Password must be match"),
 });
 
-function ChangePassword ({mobile}) {
-  const navigate = useNavigate();
+function ChangePassword ({mobile , setVerify}) {
   const redirect = () => {
-    navigate("/login");
+    setVerify(false)
   }
   let resetPassword = async (data) => {
     await axios.post('http://localhost:8000/auth/reset_password', {...data, mobile: mobile}).then((result)=>{
@@ -40,6 +38,7 @@ function ChangePassword ({mobile}) {
   return ( 
     <form onSubmit={handleSubmit(resetPassword)} className="loginBox">
       <ToastContainer />
+      <h1>Reset Password</h1>
       <Input
         id="password"
         placeholder="New Password"

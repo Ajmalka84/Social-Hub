@@ -58,7 +58,7 @@ const UserList = () => {
             <td>{user.mobile}</td>
             <td>{user?.blocked ? 'Yes' : 'No'}</td>
             <td>
-              <button onClick={() => handleBlockUser(user._id)}>
+              <button className='tableUserButton' onClick={() => handleBlockUser(user._id)}>
                 {user.blocked ? 'Unblock' : 'Block'}
               </button>
             </td>

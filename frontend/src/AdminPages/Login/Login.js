@@ -40,9 +40,9 @@ const AdminLogin = () => {
   return (
     <div className="login-container">
       <form className='adminForm' onSubmit={handleSubmit}>
-        <h1>Admin Login</h1>
+        <h1 className='adminHeading'>Admin Login</h1>
         <div className="form-group">
-          <label htmlFor="email">Email address</label>
+          <label htmlFor="email" className='adminLabel'>Email address</label>
           <input
             type="email"
             name="email"
@@ -58,7 +58,7 @@ const AdminLogin = () => {
           )} */}
         </div>
         <div className="form-group">
-          <label htmlFor="password">Password</label>
+          <label htmlFor="password" className='adminLabel'>Password</label>
           <input
             type="password"
             name="password"
