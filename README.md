@@ -1,7 +1,7 @@
 # SocialHub
 SocialHub is a platform that enables users to create and share content, connect with other users, and interact with each other. It provides a range of features including commenting, liking, sharing, messaging, notifications, report post functionality, and comprehensive admin-side management for users and posts.
 
-**Click to view project** : https://main.d3vbu76p2zy0td.amplifyapp.com
+**Click to view project** : https://main.d3vbu76p2zy0td.amplifyapp.com/login
 
 ## Features
 
